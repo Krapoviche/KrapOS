@@ -156,7 +156,7 @@ strcmp(const char *str1, const char *str2)
 	return *str1 - *str2;
 }
 
-static unsigned long
+static unsigned int
 strlen(const char *s)
 {
 	unsigned long l = 0;
