@@ -35,17 +35,19 @@ endif
 DEFS   := -D__KERNEL__
 CFLAGS := -m32 \
 		  -Wall -Wextra -Werror -std=c99 \
-		  -g -gstabs \
+		  -g \
 		  -pipe \
 		  -nostdinc \
 		  -nostdlib \
 		  -fno-stack-protector \
+		  -fno-pie -no-pie \
+		  -march=pentium \
 		  $(DEFS)
-ASFLAGS := -m32 \
+ASFLAGS := -m32 -g\
 		   -DASSEMBLER \
 		   $(DEFS)
 ARFLAGS := rcs
-LDFLAGS := -g -melf_i386
+LDFLAGS := -g -melf_i386 -no-pie
 
 # Import facilities
 include build/utils.mk
