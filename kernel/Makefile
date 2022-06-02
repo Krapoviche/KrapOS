@@ -34,7 +34,7 @@ endif
 ### Tools flags ###
 DEFS   := -D__KERNEL__
 CFLAGS := -m32 \
-		  -Wall -Wextra -Werror -std=c99 \
+		  -Wall -Wextra -Werror -std=c11 \
 		  -g \
 		  -pipe \
 		  -nostdinc \

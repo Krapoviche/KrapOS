@@ -120,7 +120,7 @@ typedef __gnuc_va_list va_list;
 // Prototype des appels systeme de la spec
 int chprio(int pid, int newprio);
 void cons_write(const char *str, unsigned long size);
-int cons_read(void);
+int cons_read(char *str, unsigned long size);
 void cons_echo(int on);
 void exit(int retval);
 int getpid(void);
@@ -755,7 +755,8 @@ cons_gets(char *s, unsigned long length)
 	unsigned long n = 0;
 	cons_echo(0);
 	while (n < (length-1)) {
-		int c = cons_read();
+	    char c;
+	    cons_read(&c, 1);
 		if ((c <= 126) && (c >= 32)) {
 			s[n] = c;
 			cons_write(s + n, 1);
@@ -2427,7 +2428,8 @@ static int
 cons_reader(void *arg)
 {
 	int fid = (int)arg;
-	int c = cons_read();
+	char c;
+	cons_read(&c, 1);
 	assert(psend(fid, 1) == 0);
 	printf(" %d (%c)", 134 - getprio(getpid()), c);
 	return 0;

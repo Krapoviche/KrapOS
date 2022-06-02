@@ -4082,7 +4082,8 @@ Void_t* rEALLOc(oldmem, bytes) Void_t* oldmem; size_t bytes;
         newmem = mALLOc(nb - MALLOC_ALIGN_MASK);
         if (newmem == 0)
           return 0; /* propagate failure */
-      
+
+	memset(newmem, 0, nb - MALLOC_ALIGN_MASK);
         newp = mem2chunk(newmem);
         newsize = chunksize(newp);
         
@@ -4271,6 +4272,7 @@ Void_t* mEMALIGn(alignment, bytes) size_t alignment; size_t bytes;
 
   if (m == 0) return 0; /* propagate failure */
 
+  memset(m, 0, nb + alignment + MINSIZE);
   p = mem2chunk(m);
 
   if ((((PTR_UINT)(m)) % alignment) != 0) { /* misaligned */
@@ -4344,6 +4346,7 @@ Void_t* cALLOc(n_elements, elem_size) size_t n_elements; size_t elem_size;
   Void_t* mem = mALLOc(n_elements * elem_size);
 
   if (mem != 0) {
+    memset(mem, 0, n_elements * elem_size);
     p = mem2chunk(mem);
 
     if (!chunk_is_mmapped(p))
