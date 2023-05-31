@@ -12,7 +12,7 @@ CC=gcc -m32
 AS=gcc -m32
 LD=ld -melf_i386
 
-KFLAGS=-Wall -Wextra -g -pipe -std=c11 -nostdinc -fno-stack-protector
+KFLAGS=-Wall -Wextra -g -pipe -std=gnu17 -nostdinc -fno-stack-protector
 #KFLAGS=-Wall -O2 -fomit-frame-pointer -pipe -std=c99 -nostdinc
 
 DEF=
