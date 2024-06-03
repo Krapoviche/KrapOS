@@ -1,5 +1,7 @@
 #include "debugger.h"
 #include "cpu.h"
+#include "screen.h"
+#include <stdio.h>
 
 int fact(int n)
 {
@@ -12,12 +14,11 @@ int fact(int n)
 
 void kernel_start(void)
 {
-	int i;
 	// call_debugger(); useless with qemu -s -S
 
-	i = 10;
-
-	i = fact(i);
+    reset_screen();
+    place_cursor(0,0);
+	printf("Hello World from vandepuj & telliere kernel !");
 
 	while(1)
 	  hlt();
