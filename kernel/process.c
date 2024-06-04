@@ -5,45 +5,47 @@
 
 process_table_t* process_table;
 
+// Initialize the process table with proper field values
 process_table_t* init_process_table(){
+    // Process table itself
     process_table = mem_alloc(sizeof(process_table_t));
-    process_table->procs = mem_alloc(sizeof(process_t) * NBPROC);
-    process_table->pid_count = 0;
-    process_table->running_count = 0;
+    process_table->runnable_queue = mem_alloc(sizeof(link));
+
+    // Initiate process queue
+    link head_runnable_queue = LIST_HEAD_INIT(*process_table->runnable_queue);
+    memcpy(process_table->runnable_queue,&head_runnable_queue, sizeof(link));
+    
+    // Default values
+    process_table->last_pid = 0;
+    process_table->nbproc = 0;
+    
     return process_table;
 }
 
 void scheduler(){
     process_t* elected_proc;
-    process_t* running_proc;
+    process_t* old_proc;
 
-    // Find a waiting process
-    for(uint32_t i = 0 ; i < process_table->running_count ; i++){
-        if(process_table->procs[i].state == WAITING){
-            elected_proc = &process_table->procs[i];
-            running_proc = process_table->running;
+    if(!queue_empty(process_table->runnable_queue)){
+        // Store the currently running one as old
+        old_proc = process_table->running;
 
-            // Swap running and elected in the queue
-            for(uint32_t j = 0 ; j < process_table->running_count ; j++){
-                if(process_table->procs[j].pid == running_proc->pid){
+        // Add old process to waiting queue since it does now wait
+        queue_add(old_proc,process_table->runnable_queue,process_t,queue_link,priority);
 
-                    // Swap
-                    process_table->procs[i] = *elected_proc;
-                    process_table->procs[j] = *running_proc;
+        // Get the process with the most priority in waiting processes
+        elected_proc = queue_out(process_table->runnable_queue, process_t, queue_link);
+        
+        if(elected_proc != old_proc){
+            // Update processes state
+            old_proc->state = RUNNABLE;
+            elected_proc->state = RUNNING;
 
-                    // Set state
-                    process_table->procs[i].state = RUNNING;
-                    process_table->procs[j].state = WAITING;
+            // Update running process
+            process_table->running = elected_proc;
 
-                    // Set running process
-                    process_table->running = elected_proc;
-
-                    // Context switch
-                    ctx_sw(running_proc->register_save_zone, elected_proc->register_save_zone);
-
-                    return;
-                }
-            }
+            // Context switch between the two processes
+            ctx_sw(old_proc->register_save_zone, elected_proc->register_save_zone);
         }
     }
     
@@ -51,31 +53,23 @@ void scheduler(){
 }
 
 int32_t add_process(process_t* new_proc, uint32_t fct_addr){
-    int i = 0;
-    if(process_table->running_count < NBPROC){
+    if(process_table->nbproc < NBPROC){
         if(strlen(new_proc->name) < MAX_PROC_NAME_SIZE){
-            for(i = 0 ; (uint32_t)i < process_table->running_count ; i++){
-
-                // Replace the first dead process found
-                if(process_table->procs[i].state == DEAD){
-                    process_table->running_count -= 1;
-                    break;
-                }
-            }
-            process_table->pid_count += 1;
-            process_table->running_count += 1;
+            process_table->last_pid += 1;
+            process_table->nbproc += 1;
 
             // Load fields of process to add 
-            new_proc->pid = process_table->pid_count;
-            new_proc->state = WAITING;
+            new_proc->pid = process_table->last_pid;
+            new_proc->state = RUNNABLE;
             new_proc->stack[MAX_STACK_SIZE - 1] = fct_addr;
             new_proc->register_save_zone[1] = (uint32_t)&new_proc->stack[MAX_STACK_SIZE - 1];
+	        
+            // Add to waiting queue
+            queue_add(new_proc, process_table->runnable_queue,process_t,queue_link,priority);
 
-            // Add new process to process table
-            process_table->procs[i] = *new_proc;
-
-            return process_table->pid_count;
+            return process_table->last_pid;
         }
+        return -2;
     }
     return -1;
 }

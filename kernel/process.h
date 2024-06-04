@@ -2,16 +2,19 @@
 #define __PROCESS_H__
 
 #include "stdint.h"
+#include "queue.h"
 
 #define MAX_STACK_SIZE 512
-#define NBPROC 2
+#define NBPROC 30
 #define REGISTER_SAVE_COUNT 5
 #define MAX_PROC_NAME_SIZE 128
 
 extern void ctx_sw(uint32_t* old, uint32_t* new);
 
-typedef enum process_state{RUNNING, WAITING, LOCKED_MESS, LOCKED_SEM, LOCKED_IO, LOCKED_CHILD, SLEEPING, ZOMBIE, DEAD} process_state;
+typedef enum process_state{RUNNING, RUNNABLE, LOCKED_MESS, LOCKED_SEM, LOCKED_IO, LOCKED_CHILD, SLEEPING, ZOMBIE} process_state;
 
+// queue_link & priority are fields related to Queue management
+// See shared/queue.h
 typedef struct process_t
 {
     int32_t pid;
@@ -19,14 +22,17 @@ typedef struct process_t
     process_state state;
     uint32_t register_save_zone[REGISTER_SAVE_COUNT];
     uint32_t stack[MAX_STACK_SIZE];
+    link queue_link;
+    int priority;
 } process_t;
+
 
 typedef struct process_table_t
 {
-    process_t*  procs;
+    link* runnable_queue;
     process_t* running;
-    uint32_t running_count;
-    uint32_t pid_count;
+    uint32_t nbproc;
+    uint32_t last_pid;
 } process_table_t;
 
 process_table_t* init_process_table();
