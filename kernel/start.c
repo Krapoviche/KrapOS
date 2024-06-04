@@ -1,6 +1,7 @@
 #include "debugger.h"
 #include "cpu.h"
 #include "screen.h"
+#include "it.h"
 #include <stdio.h>
 
 int fact(int n)
@@ -18,7 +19,11 @@ void kernel_start(void)
 
     reset_screen();
     place_cursor(0,0);
-	printf("Hello World from vandepuj & telliere kernel !");
+	init_clock();
+	init_IT_handlers(32, IT_32_handler);
+	mask_IRQ(0, false);
+
+	sti();
 
 	while(1)
 	  hlt();
