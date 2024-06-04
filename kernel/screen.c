@@ -1,7 +1,8 @@
-#include <screen.h>
-#include <string.h>
-#include <cpu.h>
-#include <stdio.h>
+#include "screen.h"
+#include "string.h"
+#include "cpu.h"
+#include "stdio.h"
+#include "it.h"
 
 uint16_t CURSOR_LINE = 0;
 uint16_t CURSOR_COLUMN = 0;
@@ -112,8 +113,11 @@ void console_putbytes(const char *s, int len){
     }
 }
 
-void display_time(char* s) {
+void display_time(void) {
+    uint32_t processor_time = uptime();
+    char formatted_time[9];
+    sprintf(formatted_time,"%02d:%02d:%02d",processor_time/3600,processor_time/60, processor_time%60);
     for (int i = 0; i<8; i++) {
-        write_char(0, NB_COL-8+i, s[i], 15, 0);
+        write_char(0, NB_COL-8+i, formatted_time[i], 15, 0);
     }
 }

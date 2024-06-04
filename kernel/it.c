@@ -3,6 +3,7 @@
 #include "it.h"
 #include "screen.h"
 #include "segment.h"
+#include "process.h"
 
 uint32_t ticks;
 
@@ -20,14 +21,15 @@ void init_clock(void){
     outb((QUARTZ / CLOCKFREQ) >> 8, 0x40);
 }
 
+uint32_t uptime() {
+    return ticks / CLOCKFREQ;
+}
+
 void tic_PIT(void){
     outb(0x20,0x20);
     ticks++;
-    uint32_t processor_time = ticks / 50;
 
-    char formatted_time[9];
-    sprintf(formatted_time,"%02d:%02d:%02d",processor_time/3600,processor_time/60, processor_time%60);
-    display_time(formatted_time);
+    scheduler();
 }
 
 void mask_IRQ(uint32_t IRQ_number, bool mask) {

@@ -10,9 +10,9 @@
 void proc1(void) {
   for (;;) {
     printf("[%s] pid = %i\n", get_name(), get_pid());
-    for (int32_t i = 0; i < 100000000; i++)
-      ;
-    scheduler();
+    sti();
+    hlt();
+    cli();
   }
 }
 
@@ -22,6 +22,11 @@ void kernel_start(void)
 	uint32_t registers [5];
 
 	reset_screen();
+	place_cursor(0, 0);
+
+	init_clock();
+	init_IT_handlers(32, IT_32_handler);
+	mask_IRQ(0, false);
 
 	process_table = init_process_table();
 	process_t * p;
@@ -29,7 +34,7 @@ void kernel_start(void)
 	for(int i = 0 ; i < 30 ; i++){
 		p = mem_alloc(sizeof(process_t));
 		sprintf(p->name, "p_%d", i);
-		p->priority = i;
+		p->priority = 1;
 		add_process(p, (uint32_t)&proc1);
 	}
 
