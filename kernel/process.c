@@ -14,15 +14,18 @@ process_table_t* init_process_table(){
     process_table->runnable_queue = mem_alloc(sizeof(link));
     process_table->sleeping_queue = mem_alloc(sizeof(link));
     process_table->dead_queue = mem_alloc(sizeof(link));
+    process_table->zombie_queue = mem_alloc(sizeof(link));
 
     // Initiate process queues
     link head_runnable_queue = LIST_HEAD_INIT(*process_table->runnable_queue);
     link head_sleeping_queue = LIST_HEAD_INIT(*process_table->sleeping_queue);
     link head_dead_queue = LIST_HEAD_INIT(*process_table->dead_queue);
+    link head_zombie_queue = LIST_HEAD_INIT(*process_table->zombie_queue);
 
     memcpy(process_table->runnable_queue,&head_runnable_queue, sizeof(link));
     memcpy(process_table->sleeping_queue,&head_sleeping_queue, sizeof(link));
     memcpy(process_table->dead_queue,&head_dead_queue, sizeof(link));
+    memcpy(process_table->zombie_queue,&head_zombie_queue, sizeof(link));
     
     // Default values
     process_table->last_pid = 0;
@@ -79,6 +82,21 @@ int32_t add_process(process_t* new_proc, uint32_t fct_addr){
 
             // Load fields of process to add 
             new_proc->pid = process_table->last_pid;
+
+            // Set Parent PID, add to parent's children
+            // After checking wether it's orphan processes or not
+            if(process_table->running != NULL){
+                new_proc->ppid = process_table->running->pid;
+                queue_add(new_proc,process_table->running->children,process_t,parent_link,pid);
+            } else {
+                new_proc->ppid = -1;
+            }
+
+            // Initialize Children queue
+            new_proc->children = mem_alloc(sizeof(link));
+            link head_children_queue = LIST_HEAD_INIT(*new_proc->children);
+            memcpy(new_proc->children, &head_children_queue, sizeof(link));
+
             new_proc->state = RUNNABLE;
             new_proc->stack[MAX_STACK_SIZE - 2] = fct_addr;
             new_proc->stack[MAX_STACK_SIZE - 1] = (uint32_t)end_process;
@@ -128,10 +146,32 @@ void end_process(){
 
 void clear_dead_processes(){
     process_t* process;
+    process_t* child;
+
     while(!queue_empty(process_table->dead_queue)){
+        // Get all dying processes
         process = queue_out(process_table->dead_queue,process_t,queue_link);
-        mem_free(process, sizeof(process_t));
-        process_table->nbproc -= 1;
+
+        // Anyway, children of this process should die
+        queue_for_each(child,process->children,process_t,parent_link){
+            child->ppid = -1;
+            child->state = DYING;
+            queue_del(child,queue_link);
+            queue_add(child,process_table->dead_queue,process_t,queue_link,priority);
+        }
+
+        // If a parent exists, this process becomes a ZOMBIE until it's parent dies
+        if(process->ppid != -1){
+            process->state = ZOMBIE;
+            queue_add(process,process_table->zombie_queue,process_t,queue_link,priority);
+        }
+        // It there is no parent, this process should now be deleted
+        else {
+            mem_free(process->children, sizeof(link));
+            mem_free(process, sizeof(process_t));
+            process_table->nbproc -= 1;
+        }
+
     }
 }
 

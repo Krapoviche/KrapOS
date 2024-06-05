@@ -18,12 +18,15 @@ typedef enum process_state{RUNNING, RUNNABLE, DYING, LOCKED_MESS, LOCKED_SEM, LO
 typedef struct process_t
 {
     int32_t pid;
+    int32_t ppid;
     char name[MAX_PROC_NAME_SIZE];
     process_state state;
     uint32_t wake_up_time;
     uint32_t register_save_zone[REGISTER_SAVE_COUNT];
     uint32_t stack[MAX_STACK_SIZE];
     link queue_link;
+    link parent_link;
+    link* children;
     int priority;
 } process_t;
 
@@ -33,6 +36,7 @@ typedef struct process_table_t
     link* runnable_queue;
     link* sleeping_queue;
     link* dead_queue;
+    link* zombie_queue;
     process_t* running;
     uint32_t nbproc;
     uint32_t last_pid;
