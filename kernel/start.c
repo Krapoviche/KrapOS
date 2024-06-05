@@ -44,7 +44,7 @@ void kernel_start(void)
 	process_table->running->state = RUNNING;
 
 	process_t * p;
-	for(int i=0 ; i < 150 ; i++){
+	for(int i=0 ; i < 15 ; i++){
 		p = mem_alloc(sizeof(process_t));
 		sprintf(p->name, "p_%d", i);
 		p->priority = 1;
