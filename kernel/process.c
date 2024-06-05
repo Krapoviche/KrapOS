@@ -2,6 +2,7 @@
 #include "string.h"
 #include "stdio.h"
 #include "mem.h"
+#include "it.h"
 
 process_table_t* process_table;
 
@@ -10,10 +11,14 @@ process_table_t* init_process_table(){
     // Process table itself
     process_table = mem_alloc(sizeof(process_table_t));
     process_table->runnable_queue = mem_alloc(sizeof(link));
+    process_table->sleeping_queue = mem_alloc(sizeof(link));
 
-    // Initiate process queue
+    // Initiate process queues
     link head_runnable_queue = LIST_HEAD_INIT(*process_table->runnable_queue);
+    link head_sleeping_queue = LIST_HEAD_INIT(*process_table->sleeping_queue);
+
     memcpy(process_table->runnable_queue,&head_runnable_queue, sizeof(link));
+    memcpy(process_table->sleeping_queue,&head_sleeping_queue, sizeof(link));
     
     // Default values
     process_table->last_pid = 0;
@@ -23,19 +28,21 @@ process_table_t* init_process_table(){
 }
 
 void scheduler(){
+    seek_for_awaking_processes();
     process_t* elected_proc;
-    process_t* old_proc;
+    // Store the currently running one as old
+    process_t* old_proc = process_table->running;
 
     if(!queue_empty(process_table->runnable_queue)){
-        // Store the currently running one as old
-        old_proc = process_table->running;
 
-        // Add old process to waiting queue since it does now wait
-        queue_add(old_proc,process_table->runnable_queue,process_t,queue_link,priority);
+        if (old_proc->state == RUNNING){
+            // Add old process to waiting queue since it does now wait
+            queue_add(old_proc,process_table->runnable_queue,process_t,queue_link,priority);
+        }
 
         // Get the process with the most priority in waiting processes
         elected_proc = queue_out(process_table->runnable_queue, process_t, queue_link);
-        
+
         if(elected_proc != old_proc){
             // Update processes state
             old_proc->state = RUNNABLE;
@@ -72,6 +79,33 @@ int32_t add_process(process_t* new_proc, uint32_t fct_addr){
         return -2;
     }
     return -1;
+}
+
+void sleep(uint32_t secs) {
+    uint32_t start = uptime();
+    process_table->running->state = SLEEPING;
+    
+    // (start + secs) = time when the process should wake up
+    // UINT32_MAX - this to revert the value
+    // Since the queue priority is higher first
+    process_table->running->wake_up_time = UINT32_MAX - (start + secs);
+    queue_add(process_table->running, process_table->sleeping_queue, process_t, queue_link, wake_up_time);
+    scheduler();
+}
+
+/**
+ * Wake-up processes that need to and put it back to the runnable queue
+*/
+void seek_for_awaking_processes(){
+    process_t* proc;
+    while (!queue_empty(process_table->sleeping_queue)
+        && ( proc = queue_top(process_table->sleeping_queue, process_t, queue_link) )->wake_up_time >= UINT32_MAX - uptime() )
+    {
+        proc->state = RUNNABLE;
+        queue_del(proc, queue_link);
+        queue_add(proc, process_table->runnable_queue, process_t, queue_link, priority);
+    }
+    return;
 }
 
 int get_pid(void){

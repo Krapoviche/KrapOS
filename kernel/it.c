@@ -5,7 +5,7 @@
 #include "segment.h"
 #include "process.h"
 
-uint32_t ticks;
+uint32_t ticks = 0;
 
 void init_IT_handlers(int32_t num_IT, void (*traitant)(void)) {
     uint32_t* tableaddr = (uint32_t *)(IDT + 8 * num_IT);
