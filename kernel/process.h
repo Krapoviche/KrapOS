@@ -23,7 +23,8 @@ typedef struct process_t
     process_state state;
     uint32_t wake_up_time;
     uint32_t register_save_zone[REGISTER_SAVE_COUNT];
-    uint32_t stack[MAX_STACK_SIZE];
+    uint32_t* stack;
+    uint32_t stack_size;
     link queue_link;
     link parent_link;
     link* children;
@@ -44,13 +45,13 @@ typedef struct process_table_t
 
 process_table_t* init_process_table();
 void scheduler(void);
-int32_t add_process(process_t* new_proc, uint32_t fct_addr);
+int32_t cancel_start(uint32_t err_code, process_t* created_proc);
+int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name, uint32_t argc, ...);
+void stop(void);
 int get_pid(void);
 char* get_name(void);
-int32_t add_process(process_t* new_proc, uint32_t fct_addr);
 void sleep(uint32_t secs);
 void seek_for_awaking_processes();
-void end_process();
 void clear_dead_processes();
 
 extern process_table_t* process_table;

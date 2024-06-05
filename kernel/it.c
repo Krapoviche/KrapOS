@@ -22,7 +22,7 @@ void init_clock(void){
 }
 
 uint32_t uptime() {
-    return ticks / CLOCKFREQ;
+    return ticks;
 }
 
 void tic_PIT(void){
