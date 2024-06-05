@@ -7,10 +7,12 @@
 #include "string.h"
 #include "mem.h"
 
-void proc1(void) {
+void proc1(uint32_t j, uint32_t k) {
+	printf("param1 %d\n", j);
+	printf("param2 %d\n", k);
 	for (int i = 0; i < 3 ; i++) {
 		printf("[%s] pid = %i, i = %d\n", get_name(), get_pid(), i);
-		sleep(i + 1);
+		sleep(j + 1);
 	}
 	printf("[%s] pid = %i, END\n", get_name(), get_pid());
 }
@@ -35,20 +37,15 @@ void kernel_start(void)
 	mask_IRQ(0, false);
 	process_table = init_process_table();
 
-	process_t * p_idle = mem_alloc(sizeof(process_t));
-	sprintf(p_idle->name, "idle");
-	p_idle->priority = INT32_MIN;
-	add_process(p_idle, (uint32_t)&idle);
+	start((void*)idle, 256, INT32_MIN, "p_idle", 0);
 
 	process_table->running = queue_out(process_table->runnable_queue, process_t, queue_link);
 	process_table->running->state = RUNNING;
 
-	process_t * p;
 	for(int i=0 ; i < 15 ; i++){
-		p = mem_alloc(sizeof(process_t));
-		sprintf(p->name, "p_%d", i);
-		p->priority = 1;
-		add_process(p, (uint32_t)&proc1);
+		char name[MAX_PROC_NAME_SIZE];
+		sprintf(name, "proc_%d", i);
+		start((void*)proc1, 256, 1, name, 2, i, i+1);
 	}
 
 	idle();
