@@ -11,7 +11,7 @@
 
 extern void ctx_sw(uint32_t* old, uint32_t* new);
 
-typedef enum process_state{RUNNING, RUNNABLE, LOCKED_MESS, LOCKED_SEM, LOCKED_IO, LOCKED_CHILD, SLEEPING, ZOMBIE} process_state;
+typedef enum process_state{RUNNING, RUNNABLE, DYING, LOCKED_MESS, LOCKED_SEM, LOCKED_IO, LOCKED_CHILD, SLEEPING, ZOMBIE} process_state;
 
 // queue_link & priority are fields related to Queue management
 // See shared/queue.h
@@ -32,6 +32,7 @@ typedef struct process_table_t
 {
     link* runnable_queue;
     link* sleeping_queue;
+    link* dead_queue;
     process_t* running;
     uint32_t nbproc;
     uint32_t last_pid;
@@ -40,11 +41,15 @@ typedef struct process_table_t
 process_table_t* init_process_table();
 void scheduler(void);
 int32_t add_process(process_t* new_proc, uint32_t fct_addr);
-void sleep(uint32_t secs);
 int get_pid(void);
 char* get_name(void);
+int32_t add_process(process_t* new_proc, uint32_t fct_addr);
+void sleep(uint32_t secs);
+void seek_for_awaking_processes();
+void end_process();
+void clear_dead_processes();
 
 extern process_table_t* process_table;
-
+extern uint32_t idle_registers[REGISTER_SAVE_COUNT];
 
 #endif
