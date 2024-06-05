@@ -5,20 +5,19 @@ void ps(){
     printf("\t\t\t\tPROCESS STATUS\n");
 
     // Process running
-    printf("\t\t\t\tRUNNING\n");
     print_ps_process(process_table->running, "RUNNING");
 
     // Processes runnable
-    printf("\t\t\t\tRUNNABLE\n");
     ps_queue(process_table->runnable_queue, "RUNNABLE");
 
     // Processes sleeping
-    printf("\t\t\t\tSLEEPING\n");
-    ps_queue(process_table->sleeping_queue, "SlEEPING");
+    ps_queue(process_table->sleeping_queue, "SLEEPING");
 
     // Processes dying
-    printf("\t\t\t\tDYING\n");
     ps_queue(process_table->dead_queue, "DYING");
+    
+    // Processes zombies
+    ps_queue(process_table->zombie_queue, "ZOMBIE");
 }
 
 void permanent_ps(){
@@ -31,6 +30,7 @@ void permanent_ps(){
 }
 
 void ps_queue(link* head, char* state){
+    printf("%s\n",state);
     process_t* process;
     queue_for_each(process, head, process_t, queue_link){
         print_ps_process(process, state);
