@@ -169,16 +169,16 @@ void stop(void){
     scheduler();
 }
 
-void sleep(uint32_t secs) {
-    uint32_t start = uptime();
+void wait_clock(uint32_t ticks){
+    uint32_t start = current_clock();
     process_table->running->state = SLEEPING;
-    
-    // (start + secs) = time when the process should wake up
-    // UINT32_MAX - this to revert the value
-    // Since the queue priority is higher first
-    process_table->running->wake_up_time = UINT32_MAX - (start + secs);
+    process_table->running->wake_up_time = UINT32_MAX - (start + ticks);
     queue_add(process_table->running, process_table->sleeping_queue, process_t, queue_link, wake_up_time);
     scheduler();
+}
+
+void sleep(uint32_t secs) {
+    wait_clock(secs * CLOCKFREQ);
 }
 
 /**
@@ -187,7 +187,7 @@ void sleep(uint32_t secs) {
 void seek_for_awaking_processes(){
     process_t* proc;
     while (!queue_empty(process_table->sleeping_queue)
-        && ( proc = queue_top(process_table->sleeping_queue, process_t, queue_link) )->wake_up_time >= UINT32_MAX - uptime() )
+        && ( proc = queue_top(process_table->sleeping_queue, process_t, queue_link) )->wake_up_time >= UINT32_MAX - current_clock() )
     {
         proc->state = RUNNABLE;
         queue_del(proc, queue_link);

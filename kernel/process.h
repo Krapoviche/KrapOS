@@ -50,6 +50,7 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
 void stop(void);
 int get_pid(void);
 char* get_name(void);
+void wait_clock(uint32_t ticks);
 void sleep(uint32_t secs);
 void seek_for_awaking_processes();
 void clear_dead_processes();
