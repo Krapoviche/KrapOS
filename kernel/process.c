@@ -27,11 +27,10 @@ process_table_t* init_process_table(){
     memcpy(process_table->sleeping_queue,&head_sleeping_queue, sizeof(link));
     memcpy(process_table->dead_queue,&head_dead_queue, sizeof(link));
     memcpy(process_table->zombie_queue,&head_zombie_queue, sizeof(link));
-    
+
     // Default values
-    process_table->last_pid = 0;
     process_table->nbproc = 0;
-    
+
     return process_table;
 }
 
@@ -44,7 +43,7 @@ void scheduler(){
 
     // Handle sleeping processes
     seek_for_awaking_processes();
-    
+
     process_t* elected_proc;
     // Store the currently running one as old
     process_t* old_proc = process_table->running;
@@ -56,7 +55,7 @@ void scheduler(){
 
     // Get the process with the most priority in waiting processes
     elected_proc = queue_out(process_table->runnable_queue, process_t, queue_link);
-    
+
     // Avoid ctx switch if useless (if running process is still the highest priority)
     if(elected_proc != old_proc){
         // Update processes state
@@ -78,6 +77,15 @@ void scheduler(){
     return;
 }
 
+int32_t first_free_pid(){
+    for(int i = 0; i < NBPROC; i++){
+        if(process_table->table[i] == NULL){
+            return i;
+        }
+    }
+    return -1;
+}
+
 int32_t cancel_start(uint32_t err_code, process_t* created_proc) {
     mem_free(created_proc, sizeof(process_t));
     return err_code;
@@ -95,6 +103,8 @@ int32_t cancel_start(uint32_t err_code, process_t* created_proc) {
 int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name, uint32_t argc, ...){
     // Allocate memory for the new process
     process_t* new_proc = mem_alloc(sizeof(process_t));
+    new_proc->waiting_for = -2; // -1 is actually used for waiting for any child
+    new_proc->awaken_by_pid = -1;
     // Set the proc prio
     new_proc->priority = prio;
     // Set the proc name
@@ -112,11 +122,11 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
                 // Start reading the params ... list
                 va_start(args, argc);
                 // Increment the last used pid and the number of processes existing
-            process_table->last_pid += 1;
             process_table->nbproc += 1;
 
                 // Set the process pid & state
-            new_proc->pid = process_table->last_pid;
+            new_proc->pid = first_free_pid();
+            process_table->table[new_proc->pid] = new_proc;
 
             // Set Parent PID, add to parent's children
             // After checking wether it's orphan processes or not
@@ -136,20 +146,20 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
                 // Allocate memory for the stack & fill it with the function pointer and the stop function as exit()
                 new_proc->stack = mem_alloc(sizeof(uint32_t)*ssize);
                 new_proc->stack[ssize - argc - 2] = (uint32_t)pt_func;
-                new_proc->stack[ssize - argc - 1] = (uint32_t)stop;
+                new_proc->stack[ssize - argc - 1] = (uint32_t)exit;
                 // Potential params in the stack
                 for(uint32_t i = 0; i < argc; i++) {
                     uint32_t arg = va_arg(args, uint32_t);
                     new_proc->stack[ssize - argc + i] = arg;
                 }
                 new_proc->register_save_zone[1] = (uint32_t)&new_proc->stack[ssize - argc - 2];
-	        
+
             // Add to waiting queue
-            queue_add(new_proc, process_table->runnable_queue,process_t,queue_link,priority);
+                queue_add(new_proc, process_table->runnable_queue,process_t,queue_link,priority);
 
                 va_end(args);
 
-            return process_table->last_pid;
+                return new_proc->pid;
             }
             // If error call for cancel_start to free the memory allocated for the process
             return cancel_start(-3, new_proc);
@@ -164,9 +174,24 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
 /**
  * Stops the current process
 */
-void stop(void){
+void exit(int retval){
+    if(retval == process_table->running->pid - 1){
+        retval = 0;
+    }
+    process_table->running->retval = retval;
     process_table->running->state = DYING;
+    int32_t ppid = process_table->running->ppid;
+    if (ppid >= 0 && process_table->table[ppid] != NULL) {
+        int32_t waiting_for = process_table->table[ppid]->waiting_for;
+        if (waiting_for == process_table->running->pid || waiting_for == -1){
+            process_table->table[ppid]->waiting_for = -2;
+            process_table->table[ppid]->awaken_by_pid = process_table->running->pid;
+            process_table->table[ppid]->state = RUNNABLE;
+            queue_add(process_table->table[ppid], process_table->runnable_queue, process_t, queue_link, priority);
+        }
+    }
     scheduler();
+    while(1);
 }
 
 void wait_clock(uint32_t ticks){
@@ -179,6 +204,39 @@ void wait_clock(uint32_t ticks){
 
 void sleep(uint32_t secs) {
     wait_clock(secs * CLOCKFREQ);
+}
+
+/**
+ * Wait for a child process to end
+ * @param pid: child process id to wait for (-1 waits for any child)
+ * @param retvalp: pointer to the return value of the waited process
+*/
+int waitpid(int pid, int *retvalp) {
+    if (pid < -1 || pid >= NBPROC) {
+        return -1;
+    }
+    if (pid >= 0) {
+        if (process_table->table[pid] == NULL) {
+            return -2;
+        }
+        if (process_table->table[pid]->ppid != process_table->running->pid) {
+            return -3;
+        }
+        if (process_table->table[pid]->state == ZOMBIE) {
+            *retvalp = process_table->table[pid]->retval;
+            return 1;
+        }
+    }
+    process_table->running->waiting_for = pid;
+    process_table->running->state = LOCKED_CHILD;
+    scheduler();
+    if (pid >= 0) {
+        *retvalp = process_table->table[pid]->retval;
+    } else if (pid == -1) {
+        int32_t awaken_by_pid = process_table->running->awaken_by_pid;
+        *retvalp = process_table->table[awaken_by_pid]->retval;
+    }
+    return 2;
 }
 
 /**
@@ -222,7 +280,8 @@ void clear_dead_processes(){
             mem_free(process->children, sizeof(link));
             mem_free(process->stack, sizeof(uint32_t)*process->stack_size);
             mem_free(process, sizeof(process_t));
-        process_table->nbproc -= 1;
+            process_table->nbproc -= 1;
+            process_table->table[process->pid] = NULL;
         }
 
     }
