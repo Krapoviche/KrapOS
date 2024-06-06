@@ -292,11 +292,11 @@ void clear_dead_processes(){
         }
         // It there is no parent, this process should now be deleted
         else {
+            process_table->table[process->pid] = NULL;
             mem_free(process->children, sizeof(link));
             mem_free(process->stack, sizeof(uint32_t)*process->stack_size);
             mem_free(process, sizeof(process_t));
             process_table->nbproc -= 1;
-            process_table->table[process->pid] = NULL;
         }
 
     }
@@ -305,8 +305,10 @@ void clear_dead_processes(){
 process_t* get_process(int pid){
     if(pid < NBPROC && pid >= 0){
         process_t* process = process_table->table[pid];
-        return((process != NULL && process->state != ZOMBIE) ? process : NULL);
-    } return NULL;
+        if(process && process->state != ZOMBIE)
+            return process;
+    }
+    return NULL;
 }
 
 int getprio(int pid){
