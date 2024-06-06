@@ -149,8 +149,8 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
                 new_proc->stack[ssize - argc - 1] = (uint32_t)exit;
                 // Potential params in the stack
                 for(uint32_t i = 0; i < argc; i++) {
-                    uint32_t arg = va_arg(args, uint32_t);
-                    new_proc->stack[ssize - argc + i] = arg;
+                    void* arg = va_arg(args, void*);
+                    new_proc->stack[ssize - argc + i] = (uint32_t)arg;
                 }
                 new_proc->register_save_zone[1] = (uint32_t)&new_proc->stack[ssize - argc - 2];
 
@@ -245,10 +245,12 @@ int waitpid(int pid, int *retvalp) {
     // We don't want keep running until waken up
     scheduler();
     // Here we are elected and therefore waken up
-    if (pid >= 0) {
-        *retvalp = child->retval;
-    } else if (pid == -1) {
-        *retvalp = process_table->table[parent->awaken_by]->retval;
+    if (retvalp != NULL) {
+        if (pid >= 0) {
+            *retvalp = child->retval;
+        } else if (pid == -1) {
+            *retvalp = process_table->table[parent->awaken_by]->retval;
+        }
     }
     return 1;
 }
