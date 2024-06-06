@@ -1,42 +1,31 @@
 #include "ps.h"
+#include "cpu.h"
 
 void ps(){
+    char* state[9] = {"RUNNING", "RUNNABLE", "DYING", "LOCKED_MESS", "LOCKED_SEM", "LOCKED_IO", "LOCKED_CHILD", "SLEEPING", "ZOMBIE"};
+
     // Header
-    printf("\t\t\t\tPROCESS STATUS\n");
-
-    // Process running
-    print_ps_process(process_table->running, "RUNNING");
-
-    // Processes runnable
-    ps_queue(process_table->runnable_queue, "RUNNABLE");
-
-    // Processes sleeping
-    ps_queue(process_table->sleeping_queue, "SLEEPING");
-
-    // Processes dying
-    ps_queue(process_table->dead_queue, "DYING");
-    
-    // Processes zombies
-    ps_queue(process_table->zombie_queue, "ZOMBIE");
+    printf("\t\t\t\tPROCESS STATUS\n\n");
+    printf("\t\t\tPID\tNAME\tSTATUS\n");
+    for(int i = 0 ; i < NBPROC ; i++){
+        process_t* process = get_process(i);
+        if(process){
+            print_ps_process(process, state[process->state]);
+        }
+    }
 }
 
 void permanent_ps(){
 	while(1){
+        cli();
 		ps();
+        sti();
 		sleep(1);
 		reset_screen();
 		place_cursor(0, 0);
 	}
 }
 
-void ps_queue(link* head, char* state){
-    printf("%s\n",state);
-    process_t* process;
-    queue_for_each(process, head, process_t, queue_link){
-        print_ps_process(process, state);
-    }
-}
-
 void print_ps_process(process_t* process, char* state){
-    printf("%d\t%s\t%s\n",process->pid,process->name,state);
+    printf("\t\t\t%d\t\t%s\t\t%s\n",process->pid,process->name,state);
 }

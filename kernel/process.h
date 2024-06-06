@@ -60,6 +60,11 @@ void sleep(uint32_t secs);
 int waitpid(int pid, int *retvalp);
 void seek_for_awaking_processes();
 void clear_dead_processes();
+process_t* get_process(int pid);
+int chprio(int pid, int newprio);
+int getprio(int pid);
+int get_pid(void);
+char* get_name(void);
 
 extern process_table_t* process_table;
 extern uint32_t idle_registers[REGISTER_SAVE_COUNT];
