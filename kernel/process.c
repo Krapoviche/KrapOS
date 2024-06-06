@@ -101,7 +101,7 @@ int32_t cancel_start(uint32_t err_code, process_t* created_proc) {
  * @param argc: number of arguments given after this one
  * @param ...: arguments for the executed function
 */
-int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name, uint32_t argc, ...){
+int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name, uint32_t argc, ...){
     // Allocate memory for the new process
     process_t* new_proc = mem_alloc(sizeof(process_t));
     new_proc->waiting_for = -2; // -1 is actually used for waiting for any child
@@ -171,8 +171,22 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
     return cancel_start(-1, new_proc);
 }
 
+
+/**
+ * Starts a process
+ * @param pt_func: function pointer to the process
+ * @param ssize: stack size
+ * @param prio: priority
+ * @param name: process name
+ * @param arg: argument for the executed function
+*/
+int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name, void *arg) {
+    return start_multi_args(ptfunc, ssize, prio, name, 1, arg);
+}
+
 /**
  * Stops the current process
+ * @param retval: return value of the process
 */
 void exit(int retval){
     process_t* child = process_table->running;
