@@ -293,12 +293,9 @@ void clear_dead_processes(){
         // Get all dying processes
         process = queue_out(process_table->dead_queue,process_t,queue_link);
 
-        // Anyway, children of this process should die
+        // Anyway, children of this process should become orphans
         queue_for_each(child,process->children,process_t,parent_link){
             child->ppid = -1;
-            child->state = DYING;
-            queue_del(child,queue_link);
-            queue_add(child,process_table->dead_queue,process_t,queue_link,priority);
         }
 
         // If a parent exists, this process becomes a ZOMBIE until it's parent dies
