@@ -123,10 +123,10 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
                 // Start reading the params ... list
                 va_start(args, argc);
                 // Increment the last used pid and the number of processes existing
-            process_table->nbproc += 1;
+                process_table->nbproc += 1;
 
                 // Set the process pid & state
-            new_proc->pid = alloc_free_pid(new_proc);
+                new_proc->pid = alloc_free_pid(new_proc);
 
                 // Set Parent PID, add to parent's children
                 // After checking wether it's orphan processes or not
@@ -142,7 +142,7 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
                 link head_children_queue = LIST_HEAD_INIT(*new_proc->children);
                 memcpy(new_proc->children, &head_children_queue, sizeof(link));
 
-            new_proc->state = RUNNABLE;
+                new_proc->state = RUNNABLE;
                 // Allocate memory for the stack & fill it with the function pointer and the stop function as exit()
                 new_proc->stack = mem_alloc(sizeof(uint32_t)*ssize);
                 new_proc->stack[ssize - argc - 2] = (uint32_t)pt_func;
@@ -154,10 +154,10 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
                 }
                 new_proc->register_save_zone[1] = (uint32_t)&new_proc->stack[ssize - argc - 2];
 
-            // Add to waiting queue
+                // Add to waiting queue
                 queue_add(new_proc, process_table->runnable_queue,process_t,queue_link,priority);
 
-                    va_end(args);
+                va_end(args);
 
                 return new_proc->pid;
             }

@@ -4,7 +4,7 @@
 #include "stdint.h"
 #include "queue.h"
 
-#define MAX_STACK_SIZE 512000
+#define MAX_STACK_SIZE 512
 #define NBPROC 30
 #define REGISTER_SAVE_COUNT 5
 #define MAX_PROC_NAME_SIZE 128
