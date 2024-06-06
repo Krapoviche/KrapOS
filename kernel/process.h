@@ -53,6 +53,8 @@ int32_t cancel_start(uint32_t err_code, process_t* created_proc);
 int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name, uint32_t argc, ...);
 int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name, void *arg);
 void exit(int retval);
+int kill(int32_t pid);
+int end_process_life(int32_t pid, int retval);
 int get_pid(void);
 char* get_name(void);
 void wait_clock(uint32_t ticks);

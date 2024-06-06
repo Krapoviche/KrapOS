@@ -189,8 +189,29 @@ int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name
  * @param retval: return value of the process
 */
 void exit(int retval){
+    end_process_life(process_table->running->pid, retval);
+    scheduler();
+    while(1);
+}
+
+int kill(int32_t pid){
+    
+    int ret = end_process_life(pid, 0);
+    if(ret == 0){
+        if(pid == process_table->running->pid){
+            scheduler();
+        }
+    }
+
+    return ret;
+}
+
+int end_process_life(int32_t pid, int retval){
     process_t* parent;
-    process_t* child = process_table->running;
+    process_t* child = process_table->table[pid];
+    if(!(child = get_process(pid))){
+        return -1;
+    }
     if(retval == child->pid - 1){
         retval = 0;
     }
@@ -209,8 +230,10 @@ void exit(int retval){
             queue_add(parent, process_table->runnable_queue, process_t, queue_link, priority);
         }
     }
-    scheduler();
-    while(1);
+    if(pid != process_table->running->pid){
+        queue_del(child,queue_link);
+    }
+    return 0;
 }
 
 /**
