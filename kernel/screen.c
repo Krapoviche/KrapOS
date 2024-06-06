@@ -32,6 +32,8 @@ void place_cursor(uint32_t lig, uint32_t col){
     outb(0x0E,0x3D4);
     pos = pos >> 8;
     outb(pos ,0x3D5);
+    CURSOR_LINE = lig;
+    CURSOR_COLUMN = col;
 }
 
 void treat_char(char c){
