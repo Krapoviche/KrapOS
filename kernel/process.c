@@ -128,19 +128,19 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
                 // Set the process pid & state
             new_proc->pid = alloc_free_pid(new_proc);
 
-            // Set Parent PID, add to parent's children
-            // After checking wether it's orphan processes or not
-            if(process_table->running != NULL){
-                new_proc->ppid = process_table->running->pid;
-                queue_add(new_proc,process_table->running->children,process_t,parent_link,pid);
-            } else {
-                new_proc->ppid = -1;
-            }
+                // Set Parent PID, add to parent's children
+                // After checking wether it's orphan processes or not
+                if(process_table->running != NULL){
+                    new_proc->ppid = process_table->running->pid;
+                    queue_add(new_proc,process_table->running->children,process_t,parent_link,pid);
+                } else {
+                    new_proc->ppid = -1;
+                }
 
-            // Initialize Children queue
-            new_proc->children = mem_alloc(sizeof(link));
-            link head_children_queue = LIST_HEAD_INIT(*new_proc->children);
-            memcpy(new_proc->children, &head_children_queue, sizeof(link));
+                // Initialize Children queue
+                new_proc->children = mem_alloc(sizeof(link));
+                link head_children_queue = LIST_HEAD_INIT(*new_proc->children);
+                memcpy(new_proc->children, &head_children_queue, sizeof(link));
 
             new_proc->state = RUNNABLE;
                 // Allocate memory for the stack & fill it with the function pointer and the stop function as exit()
@@ -157,7 +157,7 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
             // Add to waiting queue
                 queue_add(new_proc, process_table->runnable_queue,process_t,queue_link,priority);
 
-                va_end(args);
+                    va_end(args);
 
                 return new_proc->pid;
             }
@@ -175,6 +175,7 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
  * Stops the current process
 */
 void exit(int retval){
+    process_t* parent;
     process_t* child = process_table->running;
     if(retval == child->pid - 1){
         retval = 0;
@@ -182,16 +183,16 @@ void exit(int retval){
     child->retval = retval;
     child->state = DYING;
     int32_t ppid = child->ppid;
-    if (ppid >= 0 && process_table->table[ppid] != NULL) {
+    if (ppid >= 0 && (parent = get_process(ppid))) {
 
-        int32_t waiting_for = process_table->table[ppid]->waiting_for;
+        int32_t waiting_for = parent->waiting_for;
         // If parent is waiting for this child or for any child
         if (waiting_for == child->pid || waiting_for == -1){
 
-            process_table->table[ppid]->waiting_for = -2; // reset parent waiting_for
-            process_table->table[ppid]->awaken_by = child->pid; // tell parent who woke it up
-            process_table->table[ppid]->state = RUNNABLE; // Wake up parent
-            queue_add(process_table->table[ppid], process_table->runnable_queue, process_t, queue_link, priority);
+            parent->waiting_for = -2; // reset parent waiting_for
+            parent->awaken_by = child->pid; // tell parent who woke it up
+            parent->state = RUNNABLE; // Wake up parent
+            queue_add(parent, process_table->runnable_queue, process_t, queue_link, priority);
         }
     }
     scheduler();
@@ -299,6 +300,41 @@ void clear_dead_processes(){
         }
 
     }
+}
+
+process_t* get_process(int pid){
+    if(pid < NBPROC && pid >= 0){
+        process_t* process = process_table->table[pid];
+        return((process != NULL && process->state != ZOMBIE) ? process : NULL);
+    } return NULL;
+}
+
+int getprio(int pid){
+    process_t* process;
+    if((process = get_process(pid))){
+        return process->priority;
+    }
+    return -1;
+}
+
+int chprio(int pid, int newprio){
+    process_t* process;
+    if((process = get_process(pid))){
+        int prio = process->priority;
+        // Do nothing if the priority stays the same
+        if(prio != newprio){
+            process->priority = newprio;
+
+            // If the process was runnable, recharge the queue
+            if(process->state == RUNNABLE){
+                queue_del(process, queue_link);
+                queue_add(process,process_table->runnable_queue,process_t,queue_link,priority);
+                scheduler();
+            }
+        }
+        return prio;
+    }
+    return -1;
 }
 
 int get_pid(void){
