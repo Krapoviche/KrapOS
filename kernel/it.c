@@ -21,7 +21,7 @@ void init_clock(void){
     outb((QUARTZ / CLOCKFREQ) >> 8, 0x40);
 }
 
-uint32_t uptime() {
+uint32_t current_clock() {
     return ticks;
 }
 

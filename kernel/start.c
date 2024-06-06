@@ -7,14 +7,59 @@
 #include "string.h"
 #include "mem.h"
 
-void proc1(uint32_t j, uint32_t k) {
-	printf("param1 %d\n", j);
-	printf("param2 %d\n", k);
+
+void proc12() {
+	sleep(2);
+	printf("exit child\n");
+	exit(4);
+}
+
+void proc13() {
+	sleep(2);
+	printf("exit child\n");
+	exit(99);
+}
+
+void proc1() {
+	cli();
+	sti();
+	int retval;
+	char name[MAX_PROC_NAME_SIZE];
+	int32_t cpid;
 	for (int i = 0; i < 3 ; i++) {
-		printf("[%s] pid = %i, i = %d\n", get_name(), get_pid(), i);
-		sleep(j + 1);
+		sprintf(name, "proc_%d", i+10);
+		cpid = start((void*)proc12, 256, 3, name, 0);
+		cli();
+		printf("created process pid=%d, parent_pid=%d\n", cpid, process_table->table[cpid]->ppid);
+		sti();
 	}
-	printf("[%s] pid = %i, END\n", get_name(), get_pid());
+	cpid = start((void*)proc13, 256, 3, "proc_999", 0);
+	cli();
+	printf("created process pid=%d, parent_pid=%d\n", cpid, process_table->table[cpid]->ppid);
+	sti();
+	waitpid(cpid, &retval);
+	printf("child (pid %d) returned : %d\n", cpid, retval);
+}
+
+void proc2() {
+	cli();
+	sti();
+	int retval;
+	char name[MAX_PROC_NAME_SIZE];
+	int32_t cpid;
+	for (int i = 0; i < 3 ; i++) {
+		sprintf(name, "proc_%d", i+10);
+		cpid = start((void*)proc12, 256, 3, name, 0);
+		cli();
+		printf("created process pid=%d, parent_pid=%d\n", cpid, process_table->table[cpid]->ppid);
+		sti();
+	}
+	cpid = start((void*)proc13, 256, 3, "proc_999", 0);
+	cli();
+	printf("created process pid=%d, parent_pid=%d\n", cpid, process_table->table[cpid]->ppid);
+	sti();
+	waitpid(-1, &retval);
+	printf("child (pid %d) returned : %d\n", cpid, retval);
 }
 
 void idle(void){
@@ -41,12 +86,8 @@ void kernel_start(void)
 
 	process_table->running = queue_out(process_table->runnable_queue, process_t, queue_link);
 	process_table->running->state = RUNNING;
-
-	for(int i=0 ; i < 15 ; i++){
-		char name[MAX_PROC_NAME_SIZE];
-		sprintf(name, "proc_%d", i);
-		start((void*)proc1, 256, 1, name, 2, i, i+1);
-	}
+	printf("created process pid=%d\n",start((void*)proc1, 256, 1, "proc_1", 0));
+	printf("created process pid=%d\n",start((void*)proc2, 256, 1, "proc_2", 0));
 
 	idle();
 	return;

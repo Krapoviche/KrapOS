@@ -116,7 +116,7 @@ void console_putbytes(const char *s, int len){
 }
 
 void display_time(void) {
-    uint32_t processor_time = uptime();
+    uint32_t processor_time = current_clock();
     char formatted_time[9];
     sprintf(formatted_time,"%02d:%02d:%02d",processor_time/3600,processor_time/60, processor_time%60);
     for (int i = 0; i<8; i++) {
