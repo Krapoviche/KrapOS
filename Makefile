@@ -4,7 +4,11 @@ all:
 	$(MAKE) -C user/ all VERBOSE=$(VERBOSE)
 	$(MAKE) -C kernel/ kernel.bin VERBOSE=$(VERBOSE)
 
+docker:
+	docker run -i --platform linux/amd64 --entrypoint 'make' --workdir /psys-base --rm -v $(PWD):/psys-base gcc:11.4.0
+
 debug: run-kernel-debug run-debugger
+debug.macos: run-kernel-debug run-debugger.macos
 
 run: run-kernel
 
@@ -17,6 +21,9 @@ run-kernel-debug:
 
 run-debugger:
 	/usr/bin/gdb kernel/kernel.bin -ex 'target remote localhost:1234'
+
+run-debugger.macos:
+	lldb kernel/kernel.bin -o 'gdb-remote localhost:1234'
 
 clean:
 	$(MAKE) clean -C kernel/
