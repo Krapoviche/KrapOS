@@ -29,7 +29,7 @@ typedef struct process_t
     link parent_link;
     link* children;
     int32_t waiting_for;
-    int32_t awaken_by_pid;
+    int32_t awaken_by;
     int32_t retval;
     int priority;
 } process_t;
@@ -48,7 +48,7 @@ typedef struct process_table_t
 
 process_table_t* init_process_table();
 void scheduler(void);
-int32_t first_free_pid();
+int32_t alloc_free_pid(process_t* proc);
 int32_t cancel_start(uint32_t err_code, process_t* created_proc);
 int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name, uint32_t argc, ...);
 void exit(int retval);

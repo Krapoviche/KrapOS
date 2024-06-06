@@ -77,9 +77,10 @@ void scheduler(){
     return;
 }
 
-int32_t first_free_pid(){
+int32_t alloc_free_pid(process_t* proc){
     for(int i = 0; i < NBPROC; i++){
         if(process_table->table[i] == NULL){
+            process_table->table[i] = proc;
             return i;
         }
     }
@@ -104,7 +105,7 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
     // Allocate memory for the new process
     process_t* new_proc = mem_alloc(sizeof(process_t));
     new_proc->waiting_for = -2; // -1 is actually used for waiting for any child
-    new_proc->awaken_by_pid = -1;
+    new_proc->awaken_by = -1;
     // Set the proc prio
     new_proc->priority = prio;
     // Set the proc name
@@ -125,8 +126,7 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
             process_table->nbproc += 1;
 
                 // Set the process pid & state
-            new_proc->pid = first_free_pid();
-            process_table->table[new_proc->pid] = new_proc;
+            new_proc->pid = alloc_free_pid(new_proc);
 
             // Set Parent PID, add to parent's children
             // After checking wether it's orphan processes or not
@@ -175,18 +175,22 @@ int32_t start(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name,
  * Stops the current process
 */
 void exit(int retval){
-    if(retval == process_table->running->pid - 1){
+    process_t* child = process_table->running;
+    if(retval == child->pid - 1){
         retval = 0;
     }
-    process_table->running->retval = retval;
-    process_table->running->state = DYING;
-    int32_t ppid = process_table->running->ppid;
+    child->retval = retval;
+    child->state = DYING;
+    int32_t ppid = child->ppid;
     if (ppid >= 0 && process_table->table[ppid] != NULL) {
+
         int32_t waiting_for = process_table->table[ppid]->waiting_for;
-        if (waiting_for == process_table->running->pid || waiting_for == -1){
-            process_table->table[ppid]->waiting_for = -2;
-            process_table->table[ppid]->awaken_by_pid = process_table->running->pid;
-            process_table->table[ppid]->state = RUNNABLE;
+        // If parent is waiting for this child or for any child
+        if (waiting_for == child->pid || waiting_for == -1){
+
+            process_table->table[ppid]->waiting_for = -2; // reset parent waiting_for
+            process_table->table[ppid]->awaken_by = child->pid; // tell parent who woke it up
+            process_table->table[ppid]->state = RUNNABLE; // Wake up parent
             queue_add(process_table->table[ppid], process_table->runnable_queue, process_t, queue_link, priority);
         }
     }
@@ -194,9 +198,16 @@ void exit(int retval){
     while(1);
 }
 
+/**
+ * Wait for a certain amount of clock ITs
+ * @param ticks: number of clock IT to wait for
+*/
 void wait_clock(uint32_t ticks){
     uint32_t start = current_clock();
     process_table->running->state = SLEEPING;
+    // (start + ticks) = time when the process should wake up
+    // we count backwards "UINT32_MAX - (start + ticks)" to have the queue sorted in the right way
+    // In reality the uptime will still be start + ticks when it should wake up
     process_table->running->wake_up_time = UINT32_MAX - (start + ticks);
     queue_add(process_table->running, process_table->sleeping_queue, process_t, queue_link, wake_up_time);
     scheduler();
@@ -213,30 +224,33 @@ void sleep(uint32_t secs) {
 */
 int waitpid(int pid, int *retvalp) {
     if (pid < -1 || pid >= NBPROC) {
-        return -1;
+        return -2;
     }
+    process_t* parent = process_table->running;
+    process_t* child = process_table->table[pid];
     if (pid >= 0) {
-        if (process_table->table[pid] == NULL) {
-            return -2;
+        // If the child does not exist or is not a child of the parent
+        if (child == NULL || child->ppid != parent->pid) {
+            return -1;
         }
-        if (process_table->table[pid]->ppid != process_table->running->pid) {
-            return -3;
-        }
-        if (process_table->table[pid]->state == ZOMBIE) {
-            *retvalp = process_table->table[pid]->retval;
-            return 1;
+        // If child already finished we should already have the return value
+        if (child->state == ZOMBIE || child->state == DYING) {
+            *retvalp = child->retval;
+            return 2;
         }
     }
-    process_table->running->waiting_for = pid;
-    process_table->running->state = LOCKED_CHILD;
+    // Lock waiting for pid
+    parent->waiting_for = pid;
+    parent->state = LOCKED_CHILD;
+    // We don't want keep running until waken up
     scheduler();
+    // Here we are elected and therefore waken up
     if (pid >= 0) {
-        *retvalp = process_table->table[pid]->retval;
+        *retvalp = child->retval;
     } else if (pid == -1) {
-        int32_t awaken_by_pid = process_table->running->awaken_by_pid;
-        *retvalp = process_table->table[awaken_by_pid]->retval;
+        *retvalp = process_table->table[parent->awaken_by]->retval;
     }
-    return 2;
+    return 1;
 }
 
 /**
