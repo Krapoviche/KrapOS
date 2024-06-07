@@ -57,7 +57,6 @@ message_queue_t* get_message_queue(int fid) {
  * @return The message popped, NULL if the queue is empty
 */
 message_t* pop(message_queue_t* queue) {
-    if (is_empty(queue)) { return NULL; }
     message_t* msg = queue->head;
     if (msg == NULL) { return NULL; }
     queue->head = msg->next;
