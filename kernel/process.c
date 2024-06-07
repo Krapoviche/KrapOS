@@ -34,6 +34,22 @@ process_table_t* init_process_table(){
     return process_table;
 }
 
+int count_queue_processes(link* queue) {
+    int count = 0;
+    process_t* process;
+    queue_for_each(process, queue, process_t, queue_link) {
+        count++;
+    }
+    return 1;
+}
+
+void set_runnable(process_t* proc){
+    if (proc != NULL) {
+        proc->state = RUNNABLE;
+        queue_add(proc, process_table->runnable_queue, process_t, queue_link, priority);
+    }
+}
+
 /**
  * Scheduler calling the context switch after checking for processes dying, sleeping and electing the next process to run
 */
@@ -142,7 +158,6 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
                 link head_children_queue = LIST_HEAD_INIT(*new_proc->children);
                 memcpy(new_proc->children, &head_children_queue, sizeof(link));
 
-                new_proc->state = RUNNABLE;
                 // Allocate memory for the stack & fill it with the function pointer and the stop function as exit()
                 new_proc->stack = mem_alloc(sizeof(uint32_t)*ssize);
                 new_proc->stack[ssize - argc - 2] = (uint32_t)pt_func;
@@ -155,7 +170,7 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
                 new_proc->register_save_zone[1] = (uint32_t)&new_proc->stack[ssize - argc - 2];
 
                 // Add to waiting queue
-                queue_add(new_proc, process_table->runnable_queue,process_t,queue_link,priority);
+                set_runnable(new_proc);
 
                 va_end(args);
 
@@ -232,8 +247,7 @@ int end_process_life(int32_t pid, int retval){
 
             parent->waiting_for = -2; // reset parent waiting_for
             parent->awaken_by = child->pid; // tell parent who woke it up
-            parent->state = RUNNABLE; // Wake up parent
-            queue_add(parent, process_table->runnable_queue, process_t, queue_link, priority);
+            set_runnable(parent); // Wake up parent
         }
     }
     if(child->state == RUNNABLE || child->state == SLEEPING){
@@ -280,7 +294,7 @@ int waitpid(int pid, int *retvalp) {
         // If child already finished we should already have the return value
         if (child->state == ZOMBIE || child->state == DYING) {
             *retvalp = child->retval;
-            return pid;
+            return child->pid;
         }
     }
     // Lock waiting for pid
@@ -296,7 +310,7 @@ int waitpid(int pid, int *retvalp) {
             *retvalp = process_table->table[parent->awaken_by]->retval;
         }
     }
-    return process_table->table[parent->awaken_by]->pid;
+    return parent->awaken_by;
 }
 
 /**
@@ -307,9 +321,8 @@ void seek_for_awaking_processes(){
     while (!queue_empty(process_table->sleeping_queue)
         && ( proc = queue_top(process_table->sleeping_queue, process_t, queue_link) )->wake_up_time >= UINT32_MAX - current_clock() )
     {
-        proc->state = RUNNABLE;
         queue_del(proc, queue_link);
-        queue_add(proc, process_table->runnable_queue, process_t, queue_link, priority);
+        set_runnable(proc);
     }
     return;
 }

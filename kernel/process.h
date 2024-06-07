@@ -47,6 +47,8 @@ typedef struct process_table_t
 } process_table_t;
 
 process_table_t* init_process_table();
+int count_queue_processes(link* queue);
+void set_runnable(process_t* proc);
 void scheduler(void);
 int32_t alloc_free_pid(process_t* proc);
 int32_t cancel_start(uint32_t err_code, process_t* created_proc);
