@@ -52,6 +52,7 @@ int32_t alloc_free_pid(process_t* proc);
 int32_t cancel_start(uint32_t err_code, process_t* created_proc);
 int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name, uint32_t argc, ...);
 int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name, void *arg);
+void do_return();
 void exit(int retval);
 int kill(int32_t pid);
 int end_process_life(int32_t pid, int retval);
@@ -65,7 +66,7 @@ void clear_dead_processes();
 process_t* get_process(int pid);
 int chprio(int pid, int newprio);
 int getprio(int pid);
-int get_pid(void);
+int getpid(void);
 char* get_name(void);
 
 extern process_table_t* process_table;

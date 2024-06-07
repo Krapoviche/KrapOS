@@ -146,7 +146,7 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
                 // Allocate memory for the stack & fill it with the function pointer and the stop function as exit()
                 new_proc->stack = mem_alloc(sizeof(uint32_t)*ssize);
                 new_proc->stack[ssize - argc - 2] = (uint32_t)pt_func;
-                new_proc->stack[ssize - argc - 1] = (uint32_t)exit;
+                new_proc->stack[ssize - argc - 1] = (uint32_t)do_return;
                 // Potential params in the stack
                 for(uint32_t i = 0; i < argc; i++) {
                     void* arg = va_arg(args, void*);
@@ -184,6 +184,14 @@ int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name
     return start_multi_args(ptfunc, ssize, prio, name, 1, arg);
 }
 
+void do_return(){
+	__asm__ __volatile__(
+		"pushl	%%eax       \n"
+		"call   exit        \n"
+		:::
+	);
+}
+
 /**
  * Stops the current process
  * @param retval: return value of the process
@@ -195,20 +203,18 @@ void exit(int retval){
 }
 
 int kill(int32_t pid){
-    
     int ret = end_process_life(pid, 0);
     if(ret == 0){
         if(pid == process_table->running->pid){
             scheduler();
         }
     }
-
     return ret;
 }
 
 int end_process_life(int32_t pid, int retval){
     process_t* parent;
-    process_t* child = process_table->table[pid];
+    process_t* child;
     if(!(child = get_process(pid))){
         return -1;
     }
@@ -230,7 +236,7 @@ int end_process_life(int32_t pid, int retval){
             queue_add(parent, process_table->runnable_queue, process_t, queue_link, priority);
         }
     }
-    if(pid != process_table->running->pid){
+    if(child->state == RUNNABLE || child->state == SLEEPING){
         queue_del(child,queue_link);
     }
     return 0;
@@ -274,7 +280,7 @@ int waitpid(int pid, int *retvalp) {
         // If child already finished we should already have the return value
         if (child->state == ZOMBIE || child->state == DYING) {
             *retvalp = child->retval;
-            return 2;
+            return pid;
         }
     }
     // Lock waiting for pid
@@ -290,7 +296,7 @@ int waitpid(int pid, int *retvalp) {
             *retvalp = process_table->table[parent->awaken_by]->retval;
         }
     }
-    return 1;
+    return process_table->table[parent->awaken_by]->pid;
 }
 
 /**
@@ -375,7 +381,7 @@ int chprio(int pid, int newprio){
     return -1;
 }
 
-int get_pid(void){
+int getpid(void){
     return process_table->running->pid;
 }
 
