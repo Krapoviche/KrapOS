@@ -1,4 +1,5 @@
 #include "process.h"
+#include "message.h"
 #include "string.h"
 #include "stdio.h"
 #include "mem.h"
@@ -387,6 +388,13 @@ int chprio(int pid, int newprio){
                 queue_del(process, queue_link);
                 queue_add(process,process_table->runnable_queue,process_t,queue_link,priority);
                 scheduler();
+            } else if(process->state == LOCKED_MESS){
+                // If process is in message waiting queue, it has specified which in waiting_for
+                link* waiting_queue = get_message_queue(process->waiting_for)->waiting_queue;
+                // We ne to remove it and put it back in the right queue to keep priority sorting
+                queue_del(process, queue_link);
+                queue_add(process, waiting_queue, process_t, queue_link,priority);
+                // No scheduler call here, the process will be waken up by the next sender
             }
         }
         return prio;

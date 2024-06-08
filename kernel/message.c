@@ -156,9 +156,11 @@ int psend(int fid, int message) {
 
     while (is_full(queue)) {
         // Lock waiting to send message when a spot is available
-        process_table->running->state = LOCKED_MESS;
+        running->waiting_for = fid;
         queue_add(running, queue->waiting_queue, process_t, queue_link, priority);
+        running->state = LOCKED_MESS;
         scheduler();
+        running->waiting_for = -2;
         // If queue was reset we need to return negative value
         if (running->retval < 0) {
             return running->retval;
@@ -188,9 +190,11 @@ int preceive(int fid, int* message) {
     process_t* running = process_table->running;
     while (is_empty(queue)) {
         // Lock waiting to receive message when one is pushed
-        running->state = LOCKED_MESS;
+        running->waiting_for = fid;
         queue_add(running, queue->waiting_queue, process_t, queue_link, priority);
+        running->state = LOCKED_MESS;
         scheduler();
+        running->waiting_for = -2;
         // If queue was reset we need to return negative value
         if (running->retval < 0) {
             return running->retval;
