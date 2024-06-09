@@ -127,7 +127,6 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
     new_proc->priority = prio;
     // Set the proc name
     new_proc->name[0] = '\0';
-    new_proc->stack_size = ssize;
     strcpy(new_proc->name, name);
 
     // Check if the process can be added
@@ -135,7 +134,7 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
         // Check if the name is not too long
         if(strlen(new_proc->name) < MAX_PROC_NAME_SIZE){
             // Check the stack size requirements
-            if (ssize <= MAX_STACK_SIZE && ssize > 2+argc) {
+            if (ssize <= MAX_STACK_SIZE) {
                 va_list args;
                 // Start reading the params ... list
                 va_start(args, argc);
@@ -160,7 +159,9 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
                 memcpy(new_proc->children, &head_children_queue, sizeof(link));
 
                 // Allocate memory for the stack & fill it with the function pointer and the stop function as exit()
-                new_proc->stack = mem_alloc(sizeof(uint32_t)*ssize);
+                ssize = ssize + argc + 2;
+                new_proc->stack_size = ssize;
+                new_proc->stack = mem_alloc(sizeof(uint32_t) * ssize);
                 new_proc->stack[ssize - argc - 2] = (uint32_t)pt_func;
                 new_proc->stack[ssize - argc - 1] = (uint32_t)do_return;
                 // Potential params in the stack
