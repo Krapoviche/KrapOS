@@ -4,7 +4,7 @@
 #include "stdint.h"
 #include "queue.h"
 
-#define MAX_STACK_SIZE 512
+#define MAX_STACK_SIZE 8192
 #define NBPROC 30
 #define REGISTER_SAVE_COUNT 5
 #define MAX_PROC_NAME_SIZE 128
@@ -58,7 +58,7 @@ void do_return();
 void exit(int retval);
 int kill(int32_t pid);
 int end_process_life(int32_t pid, int retval);
-int get_pid(void);
+int getpid(void);
 char* get_name(void);
 void wait_clock(uint32_t ticks);
 void sleep(uint32_t secs);
