@@ -65,10 +65,10 @@ void scheduler(){
     // Store the currently running one as old
     process_t* old_proc = process_table->running;
 
-        if (old_proc->state == RUNNING){
-            // Add old process to waiting queue since it does now wait
-            queue_add(old_proc,process_table->runnable_queue,process_t,queue_link,priority);
-        }
+    if (old_proc->state == RUNNING){
+        // Add old process to waiting queue since it does now wait
+        queue_add(old_proc,process_table->runnable_queue,process_t,queue_link,priority);
+    }
 
     // Get the process with the most priority in waiting processes
     elected_proc = queue_out(process_table->runnable_queue, process_t, queue_link);
@@ -223,6 +223,7 @@ void exit(int retval){
 }
 
 int kill(int32_t pid){
+    if(pid < 1) return -1;
     int ret = end_process_life(pid, 0);
     if(ret == 0){
         if(pid == process_table->running->pid){
@@ -389,7 +390,7 @@ int getprio(int pid){
 
 int chprio(int pid, int newprio){
     process_t* process;
-    if((process = get_process(pid))){
+    if(newprio > 0 && (process = get_process(pid))){
         int prio = process->priority;
         // Do nothing if the priority stays the same
         if(prio != newprio){
