@@ -79,7 +79,7 @@ void scheduler(){
         if(old_proc->state == DYING){
             old_proc->priority = 0;
             queue_add(old_proc,process_table->dead_queue,process_t,queue_link,priority);
-        } else if (old_proc-> state != SLEEPING) {
+        } else if (old_proc->state != SLEEPING && old_proc->state != ZOMBIE) {
             old_proc->state = RUNNABLE;
         }
         elected_proc->state = RUNNING;
@@ -234,14 +234,13 @@ int end_process_life(int32_t pid, int retval){
     if(!(child = get_process(pid))){
         return -1;
     }
-    if(retval == child->pid - 1){
-        retval = 0;
-    }
-    child->retval = retval;
-    child->state = DYING;
-    int32_t ppid = child->ppid;
-    if (ppid >= 0 && (parent = get_process(ppid))) {
 
+    child->retval = retval;
+    int32_t ppid = child->ppid;
+
+
+    // Treat parent case (stop waiting if waiting for this process)
+    if (ppid >= 0 && (parent = get_process(ppid))) {
         int32_t waiting_for = parent->waiting_for;
         // If parent is waiting for this child or for any child
         if (waiting_for == child->pid || waiting_for == -1){
@@ -250,10 +249,26 @@ int end_process_life(int32_t pid, int retval){
             parent->awaken_by = child->pid; // tell parent who woke it up
             set_runnable(parent); // Wake up parent
         }
+        if(child->state == RUNNABLE || child->state == SLEEPING || child->state == LOCKED_MESS){
+            queue_del(child, queue_link);
+        }
+        child->state = ZOMBIE;
+    } else {
+        if(child->state == RUNNABLE || child->state == SLEEPING || child->state == LOCKED_MESS){
+            queue_del(child, queue_link);
+            queue_add(child, process_table->dead_queue, process_t, queue_link, priority);
+        }
+        child->state = DYING;
     }
-    if(child->state == RUNNABLE || child->state == SLEEPING){
-        queue_del(child,queue_link);
+
+    // Treat children case (Their parent dies -> ppid = -1)
+    process_t* child_of_child;
+
+    while(!queue_empty(child->children)){
+        child_of_child = queue_out(child->children,process_t,parent_link);
+        child_of_child->ppid = -1;
     }
+
     return 0;
 }
 
@@ -329,30 +344,15 @@ void seek_for_awaking_processes(){
 
 void clear_dead_processes(){
     process_t* process;
-    process_t* child;
 
     while(!queue_empty(process_table->dead_queue)){
         // Get all dying processes
         process = queue_out(process_table->dead_queue,process_t,queue_link);
-
-        // Anyway, children of this process should become orphans
-        queue_for_each(child,process->children,process_t,parent_link){
-            child->ppid = -1;
-        }
-
-        // If a parent exists, this process becomes a ZOMBIE until it's parent dies
-        if(process->ppid != -1){
-            process->state = ZOMBIE;
-            queue_add(process,process_table->zombie_queue,process_t,queue_link,priority);
-        }
-        // It there is no parent, this process should now be deleted
-        else {
-            process_table->table[process->pid] = NULL;
-            mem_free(process->children, sizeof(link));
-            mem_free(process->stack, sizeof(uint32_t)*process->stack_size);
-            mem_free(process, sizeof(process_t));
-            process_table->nbproc -= 1;
-        }
+        process_table->table[process->pid] = NULL;
+        mem_free(process->children, sizeof(link));
+        mem_free(process->stack, sizeof(uint32_t)*process->stack_size);
+        mem_free(process, sizeof(process_t));
+        process_table->nbproc -= 1;
 
     }
 }
