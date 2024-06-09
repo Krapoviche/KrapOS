@@ -4,6 +4,9 @@ all:
 	$(MAKE) -C user/ all VERBOSE=$(VERBOSE)
 	$(MAKE) -C kernel/ kernel.bin VERBOSE=$(VERBOSE)
 
+test:
+	./kernel/run_tests.sh
+
 docker:
 	docker run -i --platform linux/amd64 --entrypoint 'make' --workdir /psys-base --rm -v $(PWD):/psys-base gcc:11.4.0
 
@@ -14,6 +17,9 @@ run: run-kernel
 
 run-kernel :
 	qemu-system-i386 -machine q35 -m 256 -kernel kernel/kernel.bin
+
+run-kernel-test :
+	qemu-system-i386 -machine q35 -m 256 -kernel kernel/kernel.bin -debugcon stdio > qemu-output.txt 2> /dev/null &
 
 run-kernel-debug:
 	killall qemu-system-i386 || true
