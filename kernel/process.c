@@ -261,19 +261,18 @@ int end_process_life(int32_t pid, int retval){
  * Wait for a certain amount of clock ITs
  * @param ticks: number of clock IT to wait for
 */
-void wait_clock(uint32_t ticks){
-    uint32_t start = current_clock();
+void wait_clock(uint32_t clock){
     process_table->running->state = SLEEPING;
-    // (start + ticks) = time when the process should wake up
-    // we count backwards "UINT32_MAX - (start + ticks)" to have the queue sorted in the right way
-    // In reality the uptime will still be start + ticks when it should wake up
-    process_table->running->wake_up_time = UINT32_MAX - (start + ticks);
+    // clock = time when the process should wake up
+    // we count backwards "UINT32_MAX - clock" to have the queue sorted in the right way
+    // In reality the uptime will still be clock when it should wake up
+    process_table->running->wake_up_time = UINT32_MAX - clock;
     queue_add(process_table->running, process_table->sleeping_queue, process_t, queue_link, wake_up_time);
     scheduler();
 }
 
 void sleep(uint32_t secs) {
-    wait_clock(secs * CLOCKFREQ);
+    wait_clock(current_clock() + secs*CLOCKFREQ);
 }
 
 /**
