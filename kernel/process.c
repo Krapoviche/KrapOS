@@ -173,8 +173,11 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
 
                 // Add to waiting queue
                 set_runnable(new_proc);
-
                 va_end(args);
+
+                if(new_proc->pid > 1){
+                    scheduler();
+                }
 
                 return new_proc->pid;
             }
@@ -404,6 +407,8 @@ int chprio(int pid, int newprio){
                 queue_del(process, queue_link);
                 queue_add(process, waiting_queue, process_t, queue_link,priority);
                 // No scheduler call here, the process will be waken up by the next sender
+            } else if (process->state == RUNNING){
+                scheduler();
             }
         }
         return prio;
