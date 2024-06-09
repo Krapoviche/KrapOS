@@ -308,9 +308,17 @@ int waitpid(int pid, int *retvalp) {
             return -1;
         }
         // If child already finished we should already have the return value
-        if (child->state == ZOMBIE || child->state == DYING) {
-            *retvalp = child->retval;
+        if (child->state == ZOMBIE) {
+            if(retvalp != NULL)
+                *retvalp = child->retval;
+
+            // Now that this process has no return value to give anymore, destroy it
+            child->state = DYING;
+            queue_add(child, process_table->dead_queue, process_t, queue_link, priority);
+            queue_del(child, parent_link);
             return child->pid;
+        } if (child->state == DYING){
+            return -1;
         }
     }
     // Lock waiting for pid
@@ -318,6 +326,7 @@ int waitpid(int pid, int *retvalp) {
     parent->state = LOCKED_CHILD;
     // We don't want keep running until waken up
     scheduler();
+
     // Here we are elected and therefore waken up
     if (retvalp != NULL) {
         if (pid >= 0) {
