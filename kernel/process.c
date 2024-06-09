@@ -1,4 +1,5 @@
 #include "process.h"
+#include "message.h"
 #include "string.h"
 #include "stdio.h"
 #include "mem.h"
@@ -32,6 +33,22 @@ process_table_t* init_process_table(){
     process_table->nbproc = 0;
 
     return process_table;
+}
+
+int count_queue_processes(link* queue) {
+    int count = 0;
+    process_t* process;
+    queue_for_each(process, queue, process_t, queue_link) {
+        count++;
+    }
+    return 1;
+}
+
+void set_runnable(process_t* proc){
+    if (proc != NULL) {
+        proc->state = RUNNABLE;
+        queue_add(proc, process_table->runnable_queue, process_t, queue_link, priority);
+    }
 }
 
 /**
@@ -142,7 +159,6 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
                 link head_children_queue = LIST_HEAD_INIT(*new_proc->children);
                 memcpy(new_proc->children, &head_children_queue, sizeof(link));
 
-                new_proc->state = RUNNABLE;
                 // Allocate memory for the stack & fill it with the function pointer and the stop function as exit()
                 new_proc->stack = mem_alloc(sizeof(uint32_t)*ssize);
                 new_proc->stack[ssize - argc - 2] = (uint32_t)pt_func;
@@ -155,7 +171,7 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
                 new_proc->register_save_zone[1] = (uint32_t)&new_proc->stack[ssize - argc - 2];
 
                 // Add to waiting queue
-                queue_add(new_proc, process_table->runnable_queue,process_t,queue_link,priority);
+                set_runnable(new_proc);
 
                 va_end(args);
 
@@ -232,8 +248,7 @@ int end_process_life(int32_t pid, int retval){
 
             parent->waiting_for = -2; // reset parent waiting_for
             parent->awaken_by = child->pid; // tell parent who woke it up
-            parent->state = RUNNABLE; // Wake up parent
-            queue_add(parent, process_table->runnable_queue, process_t, queue_link, priority);
+            set_runnable(parent); // Wake up parent
         }
     }
     if(child->state == RUNNABLE || child->state == SLEEPING){
@@ -246,19 +261,18 @@ int end_process_life(int32_t pid, int retval){
  * Wait for a certain amount of clock ITs
  * @param ticks: number of clock IT to wait for
 */
-void wait_clock(uint32_t ticks){
-    uint32_t start = current_clock();
+void wait_clock(uint32_t clock){
     process_table->running->state = SLEEPING;
-    // (start + ticks) = time when the process should wake up
-    // we count backwards "UINT32_MAX - (start + ticks)" to have the queue sorted in the right way
-    // In reality the uptime will still be start + ticks when it should wake up
-    process_table->running->wake_up_time = UINT32_MAX - (start + ticks);
+    // clock = time when the process should wake up
+    // we count backwards "UINT32_MAX - clock" to have the queue sorted in the right way
+    // In reality the uptime will still be clock when it should wake up
+    process_table->running->wake_up_time = UINT32_MAX - clock;
     queue_add(process_table->running, process_table->sleeping_queue, process_t, queue_link, wake_up_time);
     scheduler();
 }
 
 void sleep(uint32_t secs) {
-    wait_clock(secs * CLOCKFREQ);
+    wait_clock(current_clock() + secs*CLOCKFREQ);
 }
 
 /**
@@ -280,7 +294,7 @@ int waitpid(int pid, int *retvalp) {
         // If child already finished we should already have the return value
         if (child->state == ZOMBIE || child->state == DYING) {
             *retvalp = child->retval;
-            return pid;
+            return child->pid;
         }
     }
     // Lock waiting for pid
@@ -296,7 +310,7 @@ int waitpid(int pid, int *retvalp) {
             *retvalp = process_table->table[parent->awaken_by]->retval;
         }
     }
-    return process_table->table[parent->awaken_by]->pid;
+    return parent->awaken_by;
 }
 
 /**
@@ -307,9 +321,8 @@ void seek_for_awaking_processes(){
     while (!queue_empty(process_table->sleeping_queue)
         && ( proc = queue_top(process_table->sleeping_queue, process_t, queue_link) )->wake_up_time >= UINT32_MAX - current_clock() )
     {
-        proc->state = RUNNABLE;
         queue_del(proc, queue_link);
-        queue_add(proc, process_table->runnable_queue, process_t, queue_link, priority);
+        set_runnable(proc);
     }
     return;
 }
@@ -374,6 +387,13 @@ int chprio(int pid, int newprio){
                 queue_del(process, queue_link);
                 queue_add(process,process_table->runnable_queue,process_t,queue_link,priority);
                 scheduler();
+            } else if(process->state == LOCKED_MESS){
+                // If process is in message waiting queue, it has specified which in waiting_for
+                link* waiting_queue = get_message_queue(process->waiting_for)->waiting_queue;
+                // We ne to remove it and put it back in the right queue to keep priority sorting
+                queue_del(process, queue_link);
+                queue_add(process, waiting_queue, process_t, queue_link,priority);
+                // No scheduler call here, the process will be waken up by the next sender
             }
         }
         return prio;

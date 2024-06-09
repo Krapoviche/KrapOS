@@ -3,6 +3,7 @@
 #include "screen.h"
 #include "it.h"
 #include "process.h"
+#include "message.h"
 #include "stdio.h"
 #include "string.h"
 #include "mem.h"

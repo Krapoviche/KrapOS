@@ -25,6 +25,11 @@ uint32_t current_clock() {
     return ticks;
 }
 
+void clock_settings(unsigned long *quartz, unsigned long *ticks) {
+    *quartz = QUARTZ;
+    *ticks = CLOCKFREQ;
+}
+
 void tic_PIT(void){
     outb(0x20,0x20);
     ticks++;
