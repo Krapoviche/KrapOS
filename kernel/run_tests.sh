@@ -5,6 +5,7 @@ GREEN='\033[0;33m'
 NC='\033[0m'
 
 # Prepare environment
+rm -rf run_tests
 mkdir -p run_tests
 cp -r ./* run_tests
 cd run_tests
@@ -71,4 +72,4 @@ cp -r kernel/tests ../kernel-test-report
 
 # Cleanup
 cd ../
-rm -r run_tests
+rm -rf run_tests

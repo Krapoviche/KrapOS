@@ -15,7 +15,6 @@ void idle(void){
 		sti();
 		hlt();
 		cli();
-		exit(0);
 	}
 }
 
