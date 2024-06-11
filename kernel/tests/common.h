@@ -1,4 +1,5 @@
 #define DUMMY_VAL 78
+#define NR_PHILO 5
 
 static void test_it()
 {

@@ -199,6 +199,7 @@ int preceive(int fid, int* message) {
         running->waiting_for = fid;
         queue_add(running, queue->waiting_queue, process_t, queue_link, priority);
         running->state = LOCKED_MESS;
+        running->retval = 0;
         scheduler();
         running->waiting_for = -2;
         // If queue was reset we need to return negative value
@@ -219,14 +220,12 @@ int preceive(int fid, int* message) {
     }
     return 0;
 }
-
 /**
- * @brief Reset a message queue
- * @param queue The message queue to reset
- * @return 0 if successful, negative value if bad fid
+ * @brief Empty a message queue
+ * @param queue pointer to the message_queue_t to reset
+ * @return 0 if success. < 0 otherwise.
 */
-int preset(int fid) {
-    message_queue_t* queue = get_message_queue(fid);
+int reset_message_queue(message_queue_t* queue){
     if (queue == NULL) { return -1; }
 
     // Free all messages in the queue
@@ -241,37 +240,39 @@ int preset(int fid) {
         proc->retval = -1;
         set_runnable(proc);
     }
-    scheduler();
     return 0;
 }
 
 /**
+ * @brief Reset a message queue
+ * @param fid The fid of the message queue to reset
+ * @return 0 if successful, negative value if bad fid
+*/
+int preset(int fid) {
+    message_queue_t* queue = get_message_queue(fid);
+    int reset = reset_message_queue(queue);
+    if(reset == 0){
+        scheduler();
+        return 0;
+    }
+    return reset;
+}
+
+/**
  * @brief Delete a message queue
- * @param fid The message queue to delete
+ * @param fid The fid of the message queue to delete
  * @return 0 if successful, negative value if bad fid
 */
 int pdelete(int fid) {
     message_queue_t* queue = get_message_queue(fid);
-    if (queue == NULL) { return -1; }
-
-    // Free all messages in the queue
-    message_t* msg;
-    while ((msg = pop(queue)) != NULL) {
-        mem_free(msg, sizeof(message_t));
+    int reset = reset_message_queue(queue);
+    if(reset == 0){
+        mem_free(queue, sizeof(message_queue_t));
+        message_table[fid] = NULL;
+        scheduler();
+        return 0;
     }
-    process_t* proc;
-    // Wake up waiting processes with negative return value
-    while (!queue_empty(queue->waiting_queue)) {
-        proc = queue_out(queue->waiting_queue, process_t, queue_link);
-        proc->retval = -1;
-        set_runnable(proc);
-    }
-
-    // Queue != NULL because preset would have returned -1 if it was
-    message_table[fid] = NULL;
-    mem_free(queue, sizeof(message_queue_t));
-    scheduler();
-    return 0;
+    return reset;
 }
 
 /**
