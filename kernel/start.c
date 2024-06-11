@@ -27,9 +27,9 @@ void proc1() {
 	int retval;
 	char name[MAX_PROC_NAME_SIZE];
 	int32_t cpid;
-	printf("proc1 priority is %d\n", get_process(get_pid())->priority);
-	chprio(get_pid(),256);
-	printf("proc1 priority is %d\n", get_process(get_pid())->priority);
+	printf("proc1 priority is %d\n", get_process(getpid())->priority);
+	chprio(getpid(),256);
+	printf("proc1 priority is %d\n", get_process(getpid())->priority);
 	for (int i = 0; i < 3 ; i++) {
 		sprintf(name, "proc_%d", i+10);
 		cpid = start((void*)proc12, 256, 3, name, 0);
@@ -51,9 +51,9 @@ void proc2() {
 	int retval;
 	char name[MAX_PROC_NAME_SIZE];
 	int32_t cpid;
-	printf("proc2 priority is %d\n", get_process(get_pid())->priority);
-	chprio(get_pid(),1);
-	printf("proc2 priority is %d\n", get_process(get_pid())->priority);
+	printf("proc2 priority is %d\n", get_process(getpid())->priority);
+	chprio(getpid(),1);
+	printf("proc2 priority is %d\n", get_process(getpid())->priority);
 	for (int i = 0; i < 3 ; i++) {
 		sprintf(name, "proc_%d", i+10);
 		cpid = start((void*)proc12, 256, 3, name, 0);
