@@ -3,8 +3,8 @@
 
 #include "stdint.h"
 #include "queue.h"
+#include "primitive.h"
 
-#define MAX_STACK_SIZE 512
 #define NBPROC 30
 #define REGISTER_SAVE_COUNT 5
 #define MAX_PROC_NAME_SIZE 128
@@ -32,6 +32,7 @@ typedef struct process_t
     int32_t awaken_by;
     int32_t retval;
     int priority;
+    int msg;
 } process_t;
 
 
@@ -49,27 +50,16 @@ typedef struct process_table_t
 process_table_t* init_process_table();
 int count_queue_processes(link* queue);
 void set_runnable(process_t* proc);
-void scheduler(void);
 int32_t alloc_free_pid(process_t* proc);
 int32_t cancel_start(uint32_t err_code, process_t* created_proc);
 int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name, uint32_t argc, ...);
-int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name, void *arg);
+void scheduler();
 void do_return();
-void exit(int retval);
-int kill(int32_t pid);
 int end_process_life(int32_t pid, int retval);
-int get_pid(void);
-char* get_name(void);
-void wait_clock(uint32_t ticks);
 void sleep(uint32_t secs);
-int waitpid(int pid, int *retvalp);
 void seek_for_awaking_processes();
 void clear_dead_processes();
 process_t* get_process(int pid);
-int chprio(int pid, int newprio);
-int getprio(int pid);
-int getpid(void);
-char* get_name(void);
 
 extern process_table_t* process_table;
 extern uint32_t idle_registers[REGISTER_SAVE_COUNT];

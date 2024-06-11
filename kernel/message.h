@@ -6,8 +6,8 @@
 #include "mem.h"
 #include "string.h"
 
-#define MAX_MESSAGE_QUEUE_SIZE 10
-#define MAX_MESSAGES_QUEUES 5
+#define MAX_MESSAGE_QUEUE_SIZE 100
+#define MAX_MESSAGES_QUEUES 100
 
 typedef struct message message_t;
 struct message
@@ -35,14 +35,7 @@ message_t* pop(message_queue_t* queue);
 void push(message_queue_t* queue, message_t* msg);
 bool is_full(message_queue_t* queue);
 bool is_empty(message_queue_t* queue);
-void try_wake_first_waiting(message_queue_t* queue);
-
-int pcreate(int count);
-int pcount(int fid, int* count);
-int psend(int fid, int message);
-int preceive(int fid, int* message);
-int preset(int fid);
-int pdelete(int fid);
+int reset_message_queue(message_queue_t* queue);
 
 void destroy_message_table();
 

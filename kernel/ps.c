@@ -6,7 +6,7 @@ void ps(){
 
     // Header
     printf("\t\t\t\tPROCESS STATUS\n\n");
-    printf("\t\t\tPID\tNAME\tSTATUS\n");
+    printf("\t\tPPID\tPID\t\tNAME\t\tSTATUS\n");
     for(int i = 0 ; i < NBPROC ; i++){
         process_t* process = get_process(i);
         if(process){
@@ -27,5 +27,5 @@ void permanent_ps(){
 }
 
 void print_ps_process(process_t* process, char* state){
-    printf("\t\t\t%d\t\t%s\t\t%s\n",process->pid,process->name,state);
+    printf("\t\t%d\t%d\t\t%s\t\t%s\n",process->ppid, process->pid, process->name, state);
 }

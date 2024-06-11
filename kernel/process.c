@@ -41,7 +41,7 @@ int count_queue_processes(link* queue) {
     queue_for_each(process, queue, process_t, queue_link) {
         count++;
     }
-    return 1;
+    return count;
 }
 
 void set_runnable(process_t* proc){
@@ -51,48 +51,6 @@ void set_runnable(process_t* proc){
     }
 }
 
-/**
- * Scheduler calling the context switch after checking for processes dying, sleeping and electing the next process to run
-*/
-void scheduler(){
-    // Handle dead processes
-    clear_dead_processes();
-
-    // Handle sleeping processes
-    seek_for_awaking_processes();
-
-    process_t* elected_proc;
-    // Store the currently running one as old
-    process_t* old_proc = process_table->running;
-
-        if (old_proc->state == RUNNING){
-            // Add old process to waiting queue since it does now wait
-            queue_add(old_proc,process_table->runnable_queue,process_t,queue_link,priority);
-        }
-
-    // Get the process with the most priority in waiting processes
-    elected_proc = queue_out(process_table->runnable_queue, process_t, queue_link);
-
-    // Avoid ctx switch if useless (if running process is still the highest priority)
-    if(elected_proc != old_proc){
-        // Update processes state
-        if(old_proc->state == DYING){
-            old_proc->priority = 0;
-            queue_add(old_proc,process_table->dead_queue,process_t,queue_link,priority);
-        } else if (old_proc-> state != SLEEPING) {
-            old_proc->state = RUNNABLE;
-        }
-        elected_proc->state = RUNNING;
-
-        // Update running process
-        process_table->running = elected_proc;
-
-        // Context switch between the two processes
-        ctx_sw(old_proc->register_save_zone, elected_proc->register_save_zone);
-        return;
-    }
-    return;
-}
 
 int32_t alloc_free_pid(process_t* proc){
     for(int i = 0; i < NBPROC; i++){
@@ -127,7 +85,6 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
     new_proc->priority = prio;
     // Set the proc name
     new_proc->name[0] = '\0';
-    new_proc->stack_size = ssize;
     strcpy(new_proc->name, name);
 
     // Check if the process can be added
@@ -135,7 +92,7 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
         // Check if the name is not too long
         if(strlen(new_proc->name) < MAX_PROC_NAME_SIZE){
             // Check the stack size requirements
-            if (ssize <= MAX_STACK_SIZE && ssize > 2+argc) {
+            if (ssize <= MAX_STACK_SIZE) {
                 va_list args;
                 // Start reading the params ... list
                 va_start(args, argc);
@@ -160,7 +117,9 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
                 memcpy(new_proc->children, &head_children_queue, sizeof(link));
 
                 // Allocate memory for the stack & fill it with the function pointer and the stop function as exit()
-                new_proc->stack = mem_alloc(sizeof(uint32_t)*ssize);
+                ssize = ssize + argc + 2;
+                new_proc->stack_size = ssize;
+                new_proc->stack = mem_alloc(sizeof(uint32_t) * ssize);
                 new_proc->stack[ssize - argc - 2] = (uint32_t)pt_func;
                 new_proc->stack[ssize - argc - 1] = (uint32_t)do_return;
                 // Potential params in the stack
@@ -172,8 +131,11 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
 
                 // Add to waiting queue
                 set_runnable(new_proc);
-
                 va_end(args);
+
+                if(new_proc->pid > 1){
+                    scheduler();
+                }
 
                 return new_proc->pid;
             }
@@ -187,17 +149,47 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
     return cancel_start(-1, new_proc);
 }
 
-
 /**
- * Starts a process
- * @param pt_func: function pointer to the process
- * @param ssize: stack size
- * @param prio: priority
- * @param name: process name
- * @param arg: argument for the executed function
+ * @brief Scheduler calling the context switch after checking for processes dying, sleeping and electing the next process to run
 */
-int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name, void *arg) {
-    return start_multi_args(ptfunc, ssize, prio, name, 1, arg);
+void scheduler(){
+    // Handle dead processes
+    clear_dead_processes();
+
+    // Handle sleeping processes
+    seek_for_awaking_processes();
+
+    process_t* elected_proc;
+    // Store the currently running one as old
+    process_t* old_proc = process_table->running;
+
+    if (old_proc->state == RUNNING){
+        // Add old process to waiting queue since it does now wait
+        queue_add(old_proc,process_table->runnable_queue,process_t,queue_link,priority);
+    }
+
+    // Get the process with the most priority in waiting processes
+    elected_proc = queue_out(process_table->runnable_queue, process_t, queue_link);
+
+    // Avoid ctx switch if useless (if running process is still the highest priority)
+    if(elected_proc != old_proc){
+        // Update processes state
+        if(old_proc->state == DYING){
+            old_proc->priority = 0;
+            queue_add(old_proc,process_table->dead_queue,process_t,queue_link,priority);
+        } else if (old_proc->state != SLEEPING && old_proc->state != ZOMBIE && old_proc->state != LOCKED_MESS) {
+            old_proc->state = RUNNABLE;
+        }
+        elected_proc->state = RUNNING;
+
+        // Update running process
+        process_table->running = elected_proc;
+
+        // Context switch between the two processes
+        ctx_sw(old_proc->register_save_zone, elected_proc->register_save_zone);
+        return;
+    }
+    return;
 }
 
 void do_return(){
@@ -208,40 +200,19 @@ void do_return(){
 	);
 }
 
-/**
- * Stops the current process
- * @param retval: return value of the process
-*/
-void exit(int retval){
-    end_process_life(process_table->running->pid, retval);
-    scheduler();
-    while(1);
-}
-
-int kill(int32_t pid){
-    int ret = end_process_life(pid, 0);
-    if(ret == 0){
-        if(pid == process_table->running->pid){
-            scheduler();
-        }
-    }
-    return ret;
-}
-
 int end_process_life(int32_t pid, int retval){
     process_t* parent;
     process_t* child;
     if(!(child = get_process(pid))){
         return -1;
     }
-    if(retval == child->pid - 1){
-        retval = 0;
-    }
-    child->retval = retval;
-    child->state = DYING;
-    int32_t ppid = child->ppid;
-    if (ppid >= 0 && (parent = get_process(ppid))) {
 
+    child->retval = retval;
+    int32_t ppid = child->ppid;
+
+
+    // Treat parent case (stop waiting if waiting for this process)
+    if (ppid >= 0 && (parent = get_process(ppid))) {
         int32_t waiting_for = parent->waiting_for;
         // If parent is waiting for this child or for any child
         if (waiting_for == child->pid || waiting_for == -1){
@@ -250,67 +221,31 @@ int end_process_life(int32_t pid, int retval){
             parent->awaken_by = child->pid; // tell parent who woke it up
             set_runnable(parent); // Wake up parent
         }
+        if(child->state == RUNNABLE || child->state == SLEEPING || child->state == LOCKED_MESS){
+            queue_del(child, queue_link);
+        }
+        child->state = ZOMBIE;
+    } else {
+        if(child->state == RUNNABLE || child->state == SLEEPING || child->state == LOCKED_MESS){
+            queue_del(child, queue_link);
+            queue_add(child, process_table->dead_queue, process_t, queue_link, priority);
+        }
+        child->state = DYING;
     }
-    if(child->state == RUNNABLE || child->state == SLEEPING){
-        queue_del(child,queue_link);
-    }
-    return 0;
-}
 
-/**
- * Wait for a certain amount of clock ITs
- * @param ticks: number of clock IT to wait for
-*/
-void wait_clock(uint32_t clock){
-    process_table->running->state = SLEEPING;
-    // clock = time when the process should wake up
-    // we count backwards "UINT32_MAX - clock" to have the queue sorted in the right way
-    // In reality the uptime will still be clock when it should wake up
-    process_table->running->wake_up_time = UINT32_MAX - clock;
-    queue_add(process_table->running, process_table->sleeping_queue, process_t, queue_link, wake_up_time);
-    scheduler();
+    // Treat children case (Their parent dies -> ppid = -1)
+    process_t* child_of_child;
+
+    while(!queue_empty(child->children)){
+        child_of_child = queue_out(child->children,process_t,parent_link);
+        child_of_child->ppid = -1;
+    }
+
+    return 0;
 }
 
 void sleep(uint32_t secs) {
     wait_clock(current_clock() + secs*CLOCKFREQ);
-}
-
-/**
- * Wait for a child process to end
- * @param pid: child process id to wait for (-1 waits for any child)
- * @param retvalp: pointer to the return value of the waited process
-*/
-int waitpid(int pid, int *retvalp) {
-    if (pid < -1 || pid >= NBPROC) {
-        return -2;
-    }
-    process_t* parent = process_table->running;
-    process_t* child = process_table->table[pid];
-    if (pid >= 0) {
-        // If the child does not exist or is not a child of the parent
-        if (child == NULL || child->ppid != parent->pid) {
-            return -1;
-        }
-        // If child already finished we should already have the return value
-        if (child->state == ZOMBIE || child->state == DYING) {
-            *retvalp = child->retval;
-            return child->pid;
-        }
-    }
-    // Lock waiting for pid
-    parent->waiting_for = pid;
-    parent->state = LOCKED_CHILD;
-    // We don't want keep running until waken up
-    scheduler();
-    // Here we are elected and therefore waken up
-    if (retvalp != NULL) {
-        if (pid >= 0) {
-            *retvalp = child->retval;
-        } else if (pid == -1) {
-            *retvalp = process_table->table[parent->awaken_by]->retval;
-        }
-    }
-    return parent->awaken_by;
 }
 
 /**
@@ -329,30 +264,15 @@ void seek_for_awaking_processes(){
 
 void clear_dead_processes(){
     process_t* process;
-    process_t* child;
 
     while(!queue_empty(process_table->dead_queue)){
         // Get all dying processes
         process = queue_out(process_table->dead_queue,process_t,queue_link);
-
-        // Anyway, children of this process should become orphans
-        queue_for_each(child,process->children,process_t,parent_link){
-            child->ppid = -1;
-        }
-
-        // If a parent exists, this process becomes a ZOMBIE until it's parent dies
-        if(process->ppid != -1){
-            process->state = ZOMBIE;
-            queue_add(process,process_table->zombie_queue,process_t,queue_link,priority);
-        }
-        // It there is no parent, this process should now be deleted
-        else {
-            process_table->table[process->pid] = NULL;
-            mem_free(process->children, sizeof(link));
-            mem_free(process->stack, sizeof(uint32_t)*process->stack_size);
-            mem_free(process, sizeof(process_t));
-            process_table->nbproc -= 1;
-        }
+        process_table->table[process->pid] = NULL;
+        mem_free(process->children, sizeof(link));
+        mem_free(process->stack, sizeof(uint32_t)*process->stack_size);
+        mem_free(process, sizeof(process_t));
+        process_table->nbproc -= 1;
 
     }
 }
@@ -364,47 +284,4 @@ process_t* get_process(int pid){
             return process;
     }
     return NULL;
-}
-
-int getprio(int pid){
-    process_t* process;
-    if((process = get_process(pid))){
-        return process->priority;
-    }
-    return -1;
-}
-
-int chprio(int pid, int newprio){
-    process_t* process;
-    if((process = get_process(pid))){
-        int prio = process->priority;
-        // Do nothing if the priority stays the same
-        if(prio != newprio){
-            process->priority = newprio;
-
-            // If the process was runnable, recharge the queue
-            if(process->state == RUNNABLE){
-                queue_del(process, queue_link);
-                queue_add(process,process_table->runnable_queue,process_t,queue_link,priority);
-                scheduler();
-            } else if(process->state == LOCKED_MESS){
-                // If process is in message waiting queue, it has specified which in waiting_for
-                link* waiting_queue = get_message_queue(process->waiting_for)->waiting_queue;
-                // We ne to remove it and put it back in the right queue to keep priority sorting
-                queue_del(process, queue_link);
-                queue_add(process, waiting_queue, process_t, queue_link,priority);
-                // No scheduler call here, the process will be waken up by the next sender
-            }
-        }
-        return prio;
-    }
-    return -1;
-}
-
-int getpid(void){
-    return process_table->running->pid;
-}
-
-char* get_name(void){
-    return process_table->running->name;
 }

@@ -1,6 +1,8 @@
 *.o
 *.d
 */out/
+run_tests
+*-test-report
 kernel/kernel.bin
 user/user.debug
 user/user.bin
