@@ -25,4 +25,9 @@
 
 #define call_debugger() do { __asm__ __volatile__("int $3"); } while (0)
 
+#include "process.h"
+
+void dump_stack(process_t* proc);
+uint32_t get_args_end(process_t* proc);
+
 #endif

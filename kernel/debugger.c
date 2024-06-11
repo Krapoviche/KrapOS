@@ -1,9 +1,11 @@
 #include "debug.h"
 #include "serial.h"
+#include "debugger.h"
 #include "boot/processor_structs.h"
 #include "gdb_serial_support.h"
 #include "cpu.h"
 #include "string.h"
+#include "stdio.h"
 
 static int do_debug = 0;
 
@@ -240,4 +242,38 @@ void trap_handler(unsigned trapno, unsigned error_code)
 			}
 		}
 	}
+}
+
+void dump_stack(process_t* proc){
+	uint32_t i_buff;
+	uint32_t args_end = get_args_end(proc);
+
+	printf("\t-------------------------------------------------\n");
+	for(uint32_t i = 0 ; i < proc->stack_size ; i++){
+		i_buff = i;
+
+		if(i == args_end - 2) printf("fct->\t"); else printf("\t");
+
+		printf("|\t%05d", i);
+		while((void*)(proc->stack[i]) == NULL) i++;
+		if(i_buff != i){
+			printf("-%05d\t",  i - 1);
+			i--;
+		} else {
+			printf("      \t");
+		}
+			
+
+		printf("|\t%p\t|\n", (void *)(proc->stack[i_buff]));
+		printf("\t-------------------------------------------------\n");
+	}
+}
+
+uint32_t get_args_end(process_t* proc){
+	int i = proc->stack_size;
+
+	while((void*)(proc->stack[i]) != do_return){
+		i--;
+	}
+	return i+1;
 }
