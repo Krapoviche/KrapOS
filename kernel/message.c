@@ -220,7 +220,8 @@ int preceive(int fid, int* message) {
     }
     // Don't forget to free message
     mem_free(msg, sizeof(message_t));
-    // if queue was full before we took our msg
+
+    // if queue was full before we took our msg and if someone is waiting to produce
     if(queue->size == queue->max_size -1 && !queue_empty(queue->waiting_queue)){
         // Read message from waiting queue
         process_t* waiting = queue_out(queue->waiting_queue, process_t, queue_link);
@@ -230,7 +231,7 @@ int preceive(int fid, int* message) {
         msg->next = NULL;
         push(queue, msg);
 
-        // Immediately try to wake up first psend waiting process (if none, does nothing)
+        // Set waiting as runnable since "psend" happened
         set_runnable(waiting);
         scheduler();
     }

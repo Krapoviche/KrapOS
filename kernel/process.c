@@ -223,9 +223,12 @@ void exit(int retval){
 }
 
 int kill(int32_t pid){
+    // DON'T KILL IDLE PROCESS
     if(pid < 1) return -1;
+
     int ret = end_process_life(pid, 0);
     if(ret == 0){
+        // When killing yourself, new process needs to be elected, this for, schedule.
         if(pid == process_table->running->pid){
             scheduler();
         }
@@ -311,7 +314,7 @@ int waitpid(int pid, int *retvalp) {
     }
     if (pid >= 0) {
         child = process_table->table[pid];
-        // If the child does not exist or is not a child of the parent
+        // If the child does not exist or is not the same as parent or is not a child of the parent or is not already dying.
         if (child == NULL || child->pid == parent->pid || child->ppid != parent->pid || child->state == DYING) {
             return -1;
         }
@@ -346,6 +349,12 @@ int waitpid(int pid, int *retvalp) {
     // Here we are elected and therefore waken up
     if (pid == -1) {
         child = process_table->table[parent->awaken_by];
+        while(child->ppid != parent->pid){
+            // Lock waiting for pid
+            parent->waiting_for = pid;
+            parent->state = LOCKED_CHILD;
+            scheduler();
+        }
     }
     // if the child is a zombie, we can get the return value and let it die peacefully
     if (child->state == ZOMBIE) {
