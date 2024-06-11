@@ -37,13 +37,6 @@ bool is_full(message_queue_t* queue);
 bool is_empty(message_queue_t* queue);
 int reset_message_queue(message_queue_t* queue);
 
-int pcreate(int count);
-int pcount(int fid, int* count);
-int psend(int fid, int message);
-int preceive(int fid, int* message);
-int preset(int fid);
-int pdelete(int fid);
-
 void destroy_message_table();
 
 extern message_table_t message_table;
