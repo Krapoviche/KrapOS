@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #endif
 #define QUARTZ 0x1234DD
-#define CLOCKFREQ 50
+#define CLOCKFREQ 1000
 
 extern void IT_32_handler();
 void init_IT_handlers(int32_t num_IT, void (*traitant)(void));

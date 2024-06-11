@@ -106,6 +106,7 @@ void try_wake_first_waiting(message_queue_t* queue) {
     if (!queue_empty(queue->waiting_queue)) {
         process_t* proc = queue_out(queue->waiting_queue, process_t, queue_link);
         set_runnable(proc);
+        scheduler();
     }
 }
 
@@ -137,7 +138,11 @@ int pcount(int fid, int* count) {
     if (is_empty(queue)) {
         // If the queue is empty, count the number of processes waiting (virtually negative number of messages in queue)
         *count = -count_queue_processes(queue->waiting_queue);
-    } else {
+    } else if (is_full(queue)){
+        // Same for full queue
+        *count = queue->size + count_queue_processes(queue->waiting_queue);
+    }    
+    else {
         *count = queue->size;
     }
     return 0;
@@ -159,6 +164,7 @@ int psend(int fid, int message) {
         running->waiting_for = fid;
         queue_add(running, queue->waiting_queue, process_t, queue_link, priority);
         running->state = LOCKED_MESS;
+        running->retval = 0;
         scheduler();
         running->waiting_for = -2;
         // If queue was reset we need to return negative value
@@ -235,6 +241,7 @@ int preset(int fid) {
         proc->retval = -1;
         set_runnable(proc);
     }
+    scheduler();
     return 0;
 }
 
@@ -244,12 +251,26 @@ int preset(int fid) {
  * @return 0 if successful, negative value if bad fid
 */
 int pdelete(int fid) {
-    int ret = preset(fid);
-    if (ret < 0) { return ret; }
     message_queue_t* queue = get_message_queue(fid);
+    if (queue == NULL) { return -1; }
+
+    // Free all messages in the queue
+    message_t* msg;
+    while ((msg = pop(queue)) != NULL) {
+        mem_free(msg, sizeof(message_t));
+    }
+    process_t* proc;
+    // Wake up waiting processes with negative return value
+    while (!queue_empty(queue->waiting_queue)) {
+        proc = queue_out(queue->waiting_queue, process_t, queue_link);
+        proc->retval = -1;
+        set_runnable(proc);
+    }
+
     // Queue != NULL because preset would have returned -1 if it was
     message_table[fid] = NULL;
     mem_free(queue, sizeof(message_queue_t));
+    scheduler();
     return 0;
 }
 

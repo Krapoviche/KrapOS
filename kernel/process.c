@@ -41,7 +41,7 @@ int count_queue_processes(link* queue) {
     queue_for_each(process, queue, process_t, queue_link) {
         count++;
     }
-    return 1;
+    return count;
 }
 
 void set_runnable(process_t* proc){

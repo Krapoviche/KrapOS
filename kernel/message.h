@@ -6,8 +6,8 @@
 #include "mem.h"
 #include "string.h"
 
-#define MAX_MESSAGE_QUEUE_SIZE 10
-#define MAX_MESSAGES_QUEUES 5
+#define MAX_MESSAGE_QUEUE_SIZE 100
+#define MAX_MESSAGES_QUEUES 100
 
 typedef struct message message_t;
 struct message
