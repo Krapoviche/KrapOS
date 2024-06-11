@@ -321,6 +321,7 @@ int waitpid(int pid, int *retvalp) {
         queue_for_each(iter_proc, parent->children, process_t, parent_link) {
             if (iter_proc->state == ZOMBIE) {
                 child = iter_proc;
+                break;
             }
         }
     }
@@ -330,7 +331,6 @@ int waitpid(int pid, int *retvalp) {
             if(retvalp != NULL) {
                 *retvalp = child->retval;
             }
-
             // Now that this process has no return value to give anymore, destroy it
             child->state = DYING;
             queue_add(child, process_table->dead_queue, process_t, queue_link, priority);
@@ -344,17 +344,17 @@ int waitpid(int pid, int *retvalp) {
     // We don't want keep running until waken up
     scheduler();
     // Here we are elected and therefore waken up
+    if (pid == -1) {
+        child = process_table->table[parent->awaken_by];
+    }
+    // if the child is a zombie, we can get the return value and let it die peacefully
+    if (child->state == ZOMBIE) {
+        // Now that this process has no return value to give anymore, destroy it
+        child->state = DYING;
+        queue_add(child, process_table->dead_queue, process_t, queue_link, priority);
+        queue_del(child, parent_link);
+    }
     if (retvalp != NULL) {
-        if (pid == -1) {
-            child = process_table->table[parent->awaken_by];
-        }
-        // if the child is a zombie, we can get the return value and let it die peacefully
-        if (child->state == ZOMBIE) {
-            // Now that this process has no return value to give anymore, destroy it
-            child->state = DYING;
-            queue_add(child, process_table->dead_queue, process_t, queue_link, priority);
-            queue_del(child, parent_link);
-        }
         *retvalp = child->retval;
     }
     return parent->awaken_by;

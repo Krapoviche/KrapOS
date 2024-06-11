@@ -209,8 +209,10 @@ int preceive(int fid, int* message) {
     }
     // If the queue is neither empty nor full, just pop the message
     message_t* msg = pop(queue);
-    // Caller of preceive reads the message
-    *message = msg->content;
+    // Caller of preceive reads the message (if message is not NULL)
+    if (message != NULL) {
+        *message = msg->content;
+    }
     // Don't forget to free message
     mem_free(msg, sizeof(message_t));
     // if queue was full before we took our msg
