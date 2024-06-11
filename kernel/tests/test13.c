@@ -19,7 +19,6 @@ psender(void *arg)
 	int n = strlen(ps->data);
 
 	for(i=0; i<n; i++) {
-		printf("ADDING A MESSAGE AS PID %d\n", process_table->running->pid);
 		assert(psend(ps->fid, ps->data[i]) == 0);
 	}
 	return 0;
@@ -72,7 +71,6 @@ test(void)
 	chprio(pid3, 125);
 	for (i=0; i<6; i++) {
 		assert(preceive(fid, &msg) == 0);
-		printf("CHAR IS %c\n", msg);
 		assert(msg == 'e' + i);
 	}
 	chprio(pid1, 125);

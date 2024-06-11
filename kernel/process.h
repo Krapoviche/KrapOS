@@ -32,6 +32,7 @@ typedef struct process_t
     int32_t awaken_by;
     int32_t retval;
     int priority;
+    int msg;
 } process_t;
 
 

@@ -79,7 +79,7 @@ void scheduler(){
         if(old_proc->state == DYING){
             old_proc->priority = 0;
             queue_add(old_proc,process_table->dead_queue,process_t,queue_link,priority);
-        } else if (old_proc->state != SLEEPING && old_proc->state != ZOMBIE) {
+        } else if (old_proc->state != SLEEPING && old_proc->state != ZOMBIE && old_proc->state != LOCKED_MESS) {
             old_proc->state = RUNNABLE;
         }
         elected_proc->state = RUNNING;

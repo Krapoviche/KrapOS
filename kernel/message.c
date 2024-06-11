@@ -102,13 +102,6 @@ bool is_empty(message_queue_t* queue) {
  * @brief Wake up the first process waiting for a message in a message queue, if any. Does nothing if none existing
  * @param queue The message queue to wake up a process waiting for that queue to change
 */
-void try_wake_first_waiting(message_queue_t* queue) {
-    if (!queue_empty(queue->waiting_queue)) {
-        process_t* proc = queue_out(queue->waiting_queue, process_t, queue_link);
-        set_runnable(proc);
-        scheduler();
-    }
-}
 
 /**
  * @brief Create a message queue
@@ -157,29 +150,39 @@ int pcount(int fid, int* count) {
 int psend(int fid, int message) {
     message_queue_t* queue = get_message_queue(fid);
     if (queue == NULL) { return -1; }
-    process_t* running = process_table->running;
 
-    while (is_full(queue)) {
+    if (is_full(queue)) {
+        process_t* running = process_table->running;
+
         // Lock waiting to send message when a spot is available
         running->waiting_for = fid;
         queue_add(running, queue->waiting_queue, process_t, queue_link, priority);
         running->state = LOCKED_MESS;
         running->retval = 0;
+        running->msg = message;
         scheduler();
         running->waiting_for = -2;
         // If queue was reset we need to return negative value
         if (running->retval < 0) {
             return running->retval;
         }
+        return 0;
     }
     message_t* msg = (message_t*)mem_alloc(sizeof(message_t));
     msg->content = message;
     msg->next = NULL;
     push(queue, msg);
     // if queue was empty before we put our msg
-    if (queue->size == 1) {
+    if (queue->size == 1 && !queue_empty(queue->waiting_queue)) {
+        process_t* waiting = queue_out(queue->waiting_queue, process_t, queue_link);
+
+        message_t* msg = pop(queue);
+        waiting->msg = msg->content;
+        mem_free(msg, sizeof(message_t));
+
         // Immediately try to wake up first preceive waiting process (if none, does nothing)
-        try_wake_first_waiting(queue);
+        set_runnable(waiting);
+        scheduler();
     }
     return 0;
 }
@@ -194,7 +197,7 @@ int preceive(int fid, int* message) {
     message_queue_t* queue = get_message_queue(fid);
     if (queue == NULL) { return -1; }
     process_t* running = process_table->running;
-    while (is_empty(queue)) {
+    if (is_empty(queue)) {
         // Lock waiting to receive message when one is pushed
         running->waiting_for = fid;
         queue_add(running, queue->waiting_queue, process_t, queue_link, priority);
@@ -206,6 +209,8 @@ int preceive(int fid, int* message) {
         if (running->retval < 0) {
             return running->retval;
         }
+        if(message != NULL) *message = running->msg;
+        return 0;
     }
     // If the queue is neither empty nor full, just pop the message
     message_t* msg = pop(queue);
@@ -216,9 +221,18 @@ int preceive(int fid, int* message) {
     // Don't forget to free message
     mem_free(msg, sizeof(message_t));
     // if queue was full before we took our msg
-    if (queue->size == queue->max_size - 1) {
+    if(queue->size == queue->max_size -1 && !queue_empty(queue->waiting_queue)){
+        // Read message from waiting queue
+        process_t* waiting = queue_out(queue->waiting_queue, process_t, queue_link);
+        
+        message_t* msg = (message_t*)mem_alloc(sizeof(message_t));
+        msg->content = waiting->msg;
+        msg->next = NULL;
+        push(queue, msg);
+
         // Immediately try to wake up first psend waiting process (if none, does nothing)
-        try_wake_first_waiting(queue);
+        set_runnable(waiting);
+        scheduler();
     }
     return 0;
 }

@@ -35,7 +35,7 @@ message_t* pop(message_queue_t* queue);
 void push(message_queue_t* queue, message_t* msg);
 bool is_full(message_queue_t* queue);
 bool is_empty(message_queue_t* queue);
-void try_wake_first_waiting(message_queue_t* queue);
+int reset_message_queue(message_queue_t* queue);
 
 int pcreate(int count);
 int pcount(int fid, int* count);
