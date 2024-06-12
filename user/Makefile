@@ -20,7 +20,7 @@ DEF=
 
 INC=$(patsubst %,-I%,$(DIRS))
 CCL=$(CC) -Werror $(KFLAGS) $(DEF) $(INC)
-ASL=$(AS) -DASSEMBLER $(DEF) $(INC)
+ASL=$(AS) -DASSEMBLER -g $(DEF) $(INC)
 DEPS := $(patsubst %.o, %.d, $(OBJS))
 
 # Where to search for source files

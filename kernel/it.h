@@ -12,6 +12,7 @@
 #define CLOCKFREQ 1000
 
 extern void IT_32_handler();
+extern void IT_49_handler();
 void init_IT_handlers(int32_t num_IT, void (*traitant)(void));
 void tic_PIT(void);
 uint32_t current_clock();

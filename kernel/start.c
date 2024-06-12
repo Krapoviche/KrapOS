@@ -77,6 +77,20 @@ void idle(void){
 	}
 }
 
+void* test_it49(int sn, char* arg2){
+	if(sn == 0){
+		printf("SOFTWARE INTERUPTED WITH PARAM 1 %d\n",sn);
+		printf("GETPID RETURNS %d\n", getpid());
+		return((void*)getpid());
+	} else if (sn == 1) {
+		printf("%s",arg2);
+		return 0;
+	} else {
+		printf("SOFTWARE INTERUPTED WITH PARAM 1 %d\n",sn);
+		return 0;
+	}
+}
+
 void kernel_start(void)
 {
 	// call_debugger(); useless with qemu -s -S
@@ -93,8 +107,10 @@ void kernel_start(void)
 
 	process_table->running = queue_out(process_table->runnable_queue, process_t, queue_link);
 	process_table->running->state = RUNNING;
-	printf("created process pid=%d\n",start((void*)proc1, 256, 1, "proc_1", 0));
-	printf("created process pid=%d\n",start((void*)proc2, 256, 1, "proc_2", 0));
+
+	void* user_start = (void*)0x1000000;
+	start(user_start, 2048, 1, "user_start", 0);
+
 
 	idle();
 	return;
