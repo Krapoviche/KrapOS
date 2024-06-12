@@ -218,16 +218,18 @@ int pcreate(int count) {
 */
 int pcount(int fid, int* count) {
     message_queue_t* queue = get_message_queue(fid);
-    if (queue == NULL) { return 0; }
-    if (is_empty(queue)) {
-        // If the queue is empty, count the number of processes waiting (virtually negative number of messages in queue)
-        *count = -count_queue_processes(queue->waiting_queue);
-    } else if (is_full(queue)){
-        // Same for full queue
-        *count = queue->size + count_queue_processes(queue->waiting_queue);
-    }    
-    else {
-        *count = queue->size;
+    if (queue == NULL) { return -1; }
+    if (count != NULL) {
+        if (is_empty(queue)) {
+            // If the queue is empty, count the number of processes waiting (virtually negative number of messages in queue)
+            *count = -count_queue_processes(queue->waiting_queue);
+        } else if (is_full(queue)){
+            // Same for full queue
+            *count = queue->size + count_queue_processes(queue->waiting_queue);
+        }    
+        else {
+            *count = queue->size;
+        }
     }
     return 0;
 }
