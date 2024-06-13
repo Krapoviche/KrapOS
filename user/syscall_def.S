@@ -1,4 +1,5 @@
 #define GETPID 0
+#define CONSOLE_PUTBYTES 1
 #define GETPRIO 2
 
 
@@ -17,7 +18,7 @@ name: \
     pushl   %eax; \
     pushl   %ebx; \
     movl	$SYSCALLID, %eax; \
-    movl	16(%esp), %ebx; \
+    movl	12(%esp), %ebx; \
     int    $49; \
     popl    %ebx; \
     addl    $4, %esp; \
@@ -30,8 +31,8 @@ name: \
     pushl   %ebx; \
     pushl   %ecx; \
     movl	$SYSCALLID, %eax; \
-    movl	20(%esp), %ebx; \
-    movl	24(%esp), %ecx; \
+    movl	16(%esp), %ebx; \
+    movl	20(%esp), %ecx; \
     int    $49; \
     popl    %ecx; \
     popl    %ebx; \
@@ -46,9 +47,9 @@ name: \
     pushl   %ecx; \
     pushl   %edx; \
     movl	$SYSCALLID, %eax; \
-    movl	24(%esp), %ebx; \
-    movl	28(%esp), %ecx; \
-    movl	32(%esp), %edx; \
+    movl	20(%esp), %ebx; \
+    movl	24(%esp), %ecx; \
+    movl	28(%esp), %edx; \
     int    $49; \
     popl    %edx; \
     popl    %ecx; \
@@ -65,10 +66,10 @@ name: \
     pushl   %edx; \
     pushl   %edi; \
     movl	$SYSCALLID, %eax; \
-    movl	28(%esp), %ebx; \
-    movl	32(%esp), %ecx; \
-    movl	36(%esp), %edx; \
-    movl	40(%esp), %edi; \
+    movl	24(%esp), %ebx; \
+    movl	28(%esp), %ecx; \
+    movl	32(%esp), %edx; \
+    movl	36(%esp), %edi; \
     int    $49; \
     popl    %edi; \
     popl    %edx; \
@@ -87,11 +88,11 @@ name: \
     pushl   %edi; \
     pushl   %esi; \
     movl	$SYSCALLID, %eax; \
-    movl	32(%esp), %ebx; \
-    movl	36(%esp), %ecx; \
-    movl	40(%esp), %edx; \
-    movl	44(%esp), %edi; \
-    movl	48(%esp), %esi; \
+    movl	28(%esp), %ebx; \
+    movl	32(%esp), %ecx; \
+    movl	36(%esp), %edx; \
+    movl	40(%esp), %edi; \
+    movl	44(%esp), %esi; \
     int    $49; \
     popl    %esi; \
     popl    %edi; \
@@ -103,4 +104,5 @@ name: \
 
 
 SYSCALL0(getpid, GETPID)
-SYSCALL0(getprio, GETPRIO)
+SYSCALL2(console_putbytes, CONSOLE_PUTBYTES)
+SYSCALL1(getprio, GETPRIO)
