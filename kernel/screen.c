@@ -91,8 +91,6 @@ void treat_char(char c){
         
     }
 
-
-
     place_cursor(CURSOR_LINE,CURSOR_COLUMN);
 }
 

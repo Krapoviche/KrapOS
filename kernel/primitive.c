@@ -4,23 +4,10 @@
 #include "cpu.h"
 #include "it.h"
 
-/**
- * @brief Starts a process with a single argument
- * @param pt_func: function pointer to the process
- * @param ssize: stack size
- * @param prio: priority
- * @param name: process name
- * @param arg: argument for the executed function
-*/
 int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name, void *arg) {
     return start_multi_args(ptfunc, ssize, prio, name, 1, arg);
 }
 
-/**
- * @brief Get the priority of a process
- * @param pid: process id
- * @return the priority of the process, negative value if the process does not exist
-*/
 int getprio(int pid){
     process_t* process;
     if((process = get_process(pid))){
@@ -29,12 +16,6 @@ int getprio(int pid){
     return -1;
 }
 
-/**
- * @brief Change the priority of a process
- * @param pid: process id
- * @param newprio: new priority
- * @return the old priority of the process, negative value if the process does not exist
-*/
 int chprio(int pid, int newprio){
     process_t* process;
     if(newprio > 0 && (process = get_process(pid))){
@@ -64,26 +45,14 @@ int chprio(int pid, int newprio){
     return -1;
 }
 
-/**
- * @brief Get the process id of the currently running process
- * @return the process id of the currently running process
-*/
 int getpid(void){
     return process_table->running->pid;
 }
 
-/**
- * @brief Get the process id of the parent of the currently running process
- * @return the process id of the parent of the currently running process
-*/
 int getppid(void){
     return process_table->running->ppid;
 }
 
-/**
- * @brief Wait for a certain amount of clock ITs
- * @param ticks: number of clock IT to wait for
-*/
 void wait_clock(uint32_t clock){
     process_table->running->state = SLEEPING;
     // clock = time when the process should wake up
@@ -94,11 +63,6 @@ void wait_clock(uint32_t clock){
     scheduler();
 }
 
-/**
- * Wait for a child process to end
- * @param pid: child process id to wait for (-1 waits for any child)
- * @param retvalp: pointer to the return value of the waited process
-*/
 int waitpid(int pid, int *retvalp) {
     if (pid < -1 || pid >= NBPROC) {
         return -2;
@@ -165,10 +129,6 @@ int waitpid(int pid, int *retvalp) {
     return parent->awaken_by;
 }
 
-/**
- * Stops the current process
- * @param retval: return value of the process
-*/
 void exit(int retval){
     end_process_life(process_table->running->pid, retval);
     scheduler();
@@ -189,33 +149,6 @@ int kill(int pid){
     return ret;
 }
 
-/**
- * @brief Wake up the first process waiting for a message in a message queue, if any. Does nothing if none existing
- * @param queue The message queue to wake up a process waiting for that queue to change
-*/
-
-/**
- * @brief Create a message queue
- * @param count The maximum number of messages in the queue
- * @return The fid of the created message queue, -1 if failed
-*/
-int pcreate(int count) {
-    if (count <= 0 || count > MAX_MESSAGE_QUEUE_SIZE) { return -1; }
-    message_queue_t* queue = new_message_queue();
-    queue->max_size = count;
-    int fid = alloc_free_fid(queue);
-    if (fid < 0) {
-        mem_free(queue, sizeof(message_queue_t));
-    }
-    return fid;
-}
-
-/**
- * @brief Count the number of messages in a message queue
- * @param queue The message queue to count
- * @param count The adress where the count should be stored
- * @return 0 if successful, negative value if bad fid
-*/
 int pcount(int fid, int* count) {
     message_queue_t* queue = get_message_queue(fid);
     if (queue == NULL) { return 0; }
@@ -232,12 +165,17 @@ int pcount(int fid, int* count) {
     return 0;
 }
 
-/**
- * @brief Send a message to a message queue
- * @param queue The message queue to send to
- * @param content The content of the message
- * @return 0 if successful, negative value if failed (queue is NULL or was reset)
-*/
+int pcreate(int count) {
+    if (count <= 0 || count > MAX_MESSAGE_QUEUE_SIZE) { return -1; }
+    message_queue_t* queue = new_message_queue();
+    queue->max_size = count;
+    int fid = alloc_free_fid(queue);
+    if (fid < 0) {
+        mem_free(queue, sizeof(message_queue_t));
+    }
+    return fid;
+}
+
 int psend(int fid, int message) {
     message_queue_t* queue = get_message_queue(fid);
     if (queue == NULL) { return -1; }
@@ -278,12 +216,6 @@ int psend(int fid, int message) {
     return 0;
 }
 
-/**
- * @brief Receive a message from a message queue
- * @param queue The message queue to receive from
- * @param message The adress where message should be stored
- * @return 0 if successful, negative value if failed (queue is NULL or was reset)
-*/
 int preceive(int fid, int* message) {
     message_queue_t* queue = get_message_queue(fid);
     if (queue == NULL) { return -1; }
@@ -329,11 +261,6 @@ int preceive(int fid, int* message) {
     return 0;
 }
 
-/**
- * @brief Reset a message queue
- * @param fid The fid of the message queue to reset
- * @return 0 if successful, negative value if bad fid
-*/
 int preset(int fid) {
     message_queue_t* queue = get_message_queue(fid);
     int reset = reset_message_queue(queue);
@@ -344,11 +271,6 @@ int preset(int fid) {
     return reset;
 }
 
-/**
- * @brief Delete a message queue
- * @param fid The fid of the message queue to delete
- * @return 0 if successful, negative value if bad fid
-*/
 int pdelete(int fid) {
     message_queue_t* queue = get_message_queue(fid);
     int reset = reset_message_queue(queue);

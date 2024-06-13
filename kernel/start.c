@@ -62,8 +62,6 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5, int ar
 
 void kernel_start(void)
 {
-	// call_debugger(); useless with qemu -s -S
-
 	reset_screen();
 	place_cursor(0, 0);
 
@@ -79,7 +77,7 @@ void kernel_start(void)
 	process_table->running->state = RUNNING;
 
 	void* user_start = (void*)0x1000000;
-	printf("created process %d ", start(user_start, 4096, 1, "user_start", 0));
+	start(user_start, 4096, 1, "user_start", 0);
 
 	idle();
 	return;
