@@ -7,6 +7,7 @@
 #include "stdio.h"
 #include "string.h"
 #include "mem.h"
+#include "start.h"
 
 void idle(void){
 	while(1){
@@ -16,21 +17,47 @@ void idle(void){
 	}
 }
 
-void* test_it49(int sn, int arg2, int arg3){
-	if(sn == 0){
-		printf("SOFTWARE INTERUPTED WITH PARAM 1 %d\n",sn);
-		printf("GETPID RETURNS %d\n", getpid());
-		return((void*)getpid());
-	} else if (sn == 1) {
-		printf("SOFTWARE INTERUPTED WITH PARAM 1 %d\n",sn);		
-		printf("SOFTWARE INTERUPTED WITH PARAM 2 %s\n",(char*)arg2);
-		console_putbytes((char *)arg2,arg3);
-		return 0;
-	} else if (sn == 2){
-		printf("SOFTWARE INTERUPTED WITH PARAM 1 %d\n",sn);
-		printf("SOFTWARE INTERUPTED WITH PARAM 2 %d\n",arg2);
-		return 0;
-	} else {return 0;}
+void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6){
+	arg6++; // TODO: remove this line, it's just to avoid a warning
+	switch (sn){
+		case SYS_WRITE:
+			console_putbytes((char *)arg1,arg2);
+			return 0;
+		case SYS_MILLISLEEP:
+			wait_clock(current_clock() + arg1*CLOCKFREQ/1000);
+			return 0;
+		case SYS_GETPID:
+			return (void*)getpid();
+		case SYS_START:
+			return (void*)start((void*)arg1, (unsigned long)arg2, arg3, (const char*)arg4, (void*)arg5);
+		case SYS_EXIT:
+			exit(arg1);
+			return 0;
+		case SYS_KILL:
+			return (void*)kill(arg1);
+		case SYS_GETPPID:
+			return (void*)getppid();
+		case SYS_GETPRIORITY:
+			return (void*)getprio(arg1);
+		case SYS_SETPRIORITY:
+			return (void*)chprio(arg1, arg2);
+		case SYS_MQ_OPEN:
+			return (void*)pcreate(arg1);
+		case SYS_MQ_UNLINK:
+			return (void*)pdelete(arg1);
+		case SYS_MQ_SEND:
+			return (void*)psend(arg1, arg2);
+		case SYS_MQ_RECEIVE:
+			return (void*)preceive(arg1, (int*)arg2);
+		case SYS_MQ_RESET:
+			return (void*)preset(arg1);
+		case SYS_MQ_COUNT:
+			return (void*)pcount(arg1, (int*)arg2);
+		case SYS_WAITID:
+			return (void*)waitpid(arg1, (int*)arg2);
+		default:
+			return 0;
+	}
 }
 
 void kernel_start(void)

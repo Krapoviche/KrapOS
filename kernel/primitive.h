@@ -9,11 +9,11 @@ int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name
 int getprio(int pid);
 int chprio(int pid, int newprio);
 int getpid(void);
-char* getname(void);
+int getppid(void);
 void wait_clock(uint32_t clock);
 int waitpid(int pid, int *retvalp);
 void exit(int retval);
-int kill(int32_t pid);
+int kill(int pid);
 int pcreate(int count);
 int pcount(int fid, int* count);
 int psend(int fid, int message);

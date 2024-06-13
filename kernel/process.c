@@ -150,6 +150,14 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
 }
 
 /**
+ * Get the name of the currently running process
+ * @return the name of the currently running process
+*/
+char* getname(void){
+    return process_table->running->name;
+}
+
+/**
  * @brief Scheduler calling the context switch after checking for processes dying, sleeping and electing the next process to run
 */
 void scheduler(){
@@ -242,10 +250,6 @@ int end_process_life(int32_t pid, int retval){
     }
 
     return 0;
-}
-
-void sleep(uint32_t secs) {
-    wait_clock(current_clock() + secs*CLOCKFREQ);
 }
 
 /**

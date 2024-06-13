@@ -73,11 +73,11 @@ int getpid(void){
 }
 
 /**
- * Get the name of the currently running process
- * @return the name of the currently running process
+ * @brief Get the process id of the parent of the currently running process
+ * @return the process id of the parent of the currently running process
 */
-char* getname(void){
-    return process_table->running->name;
+int getppid(void){
+    return process_table->running->ppid;
 }
 
 /**
@@ -175,7 +175,7 @@ void exit(int retval){
     while(1);
 }
 
-int kill(int32_t pid){
+int kill(int pid){
     // DON'T KILL IDLE PROCESS
     if(pid < 1) return -1;
 
