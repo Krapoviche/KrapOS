@@ -18,7 +18,6 @@ void idle(void){
 }
 
 void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6){
-	arg6++; // TODO: remove this line, it's just to avoid a warning
 	switch (sn){
 		case SYS_WRITE:
 			console_putbytes((char *)arg1,arg2);
@@ -56,6 +55,7 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5, int ar
 		case SYS_WAITID:
 			return (void*)waitpid(arg1, (int*)arg2);
 		default:
+			arg6 = arg6; // TODO: remove this line, it's just to avoid a warning
 			return 0;
 	}
 }
@@ -79,8 +79,7 @@ void kernel_start(void)
 	process_table->running->state = RUNNING;
 
 	void* user_start = (void*)0x1000000;
-	start(user_start, 2048, 1, "user_start", 0);
-
+	printf("created process %d ", start(user_start, 4096, 1, "user_start", 0));
 
 	idle();
 	return;

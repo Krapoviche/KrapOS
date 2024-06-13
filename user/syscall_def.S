@@ -4,7 +4,7 @@
 #define SYS_START 56 // sys_clone in linux
 #define SYS_EXIT 60
 #define SYS_KILL 62
-#define SYS_GETPPID 39
+#define SYS_GETPPID 110
 #define SYS_GETPRIORITY 140
 #define SYS_SETPRIORITY 141
 #define SYS_MQ_OPEN 240
