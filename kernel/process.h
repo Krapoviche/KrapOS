@@ -62,7 +62,6 @@ int32_t cancel_start(uint32_t err_code, process_t* created_proc);
 int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name, uint32_t argc, ...);
 char* getname(void);
 void scheduler();
-void do_return();
 extern void do_iret();
 int end_process_life(int32_t pid, int retval);
 void seek_for_awaking_processes();

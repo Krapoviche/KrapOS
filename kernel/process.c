@@ -124,7 +124,7 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
                         new_proc->user_stack[ssize - argc + i] = (uint32_t)arg;
                     }
 
-                    new_proc->user_stack[ssize - argc - 2] = (uint32_t)do_return;
+                    new_proc->user_stack[ssize - argc - 1] = (uint32_t)0x1100000;
 
                     // // Deal with the kernel stack (fill it properly)
                     new_proc->kernel_stack[KERNEL_STACK_SIZE - 1] = SS_USER;
@@ -144,7 +144,7 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
                     new_proc->ppid = -1;
                     
                     new_proc->kernel_stack[KERNEL_STACK_SIZE - 2] = (uint32_t)pt_func;
-                    new_proc->kernel_stack[KERNEL_STACK_SIZE - 1] = (uint32_t)do_return;
+                    new_proc->kernel_stack[KERNEL_STACK_SIZE - 1] = (uint32_t)0x1100000;
                     new_proc->register_save_zone[1] = (uint32_t)&new_proc->kernel_stack[KERNEL_STACK_SIZE - 2];
                 }
 
@@ -228,14 +228,6 @@ void scheduler(){
         return;
     }
     return;
-}
-
-void do_return(){
-	__asm__ __volatile__(
-		"pushl	%%eax       \n"
-		"call   exit        \n"
-		:::
-	);
 }
 
 int end_process_life(int32_t pid, int retval){

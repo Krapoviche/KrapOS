@@ -7,6 +7,14 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5, int ar
 		case SYS_WRITE:
 			console_putbytes((char *)arg1,arg2);
 			return 0;
+		case SYS_CLOCK_GETTIME:
+			return (void *)current_clock();
+		case SYS_CLOCK_GETRES:
+			clock_settings((unsigned long *) arg1,(unsigned long *) arg2);
+			return 0;
+		case SYS_WAITCLOCK:
+			wait_clock(arg1);
+			return 0;
 		case SYS_MILLISLEEP:
 			wait_clock(current_clock() + arg1*CLOCKFREQ/1000);
 			return 0;

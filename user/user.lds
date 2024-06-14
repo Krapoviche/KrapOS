@@ -58,4 +58,9 @@ SECTIONS {
 
 	/* End of user memory heap */
 	mem_heap_end = 0x2800000;
+
+	/* Implicit return function */
+	.do_return_section 0x1100000 : {
+		KEEP(*(.text.do_return))
+	}
 }
