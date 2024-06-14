@@ -91,8 +91,6 @@ void treat_char(char c){
         
     }
 
-
-
     place_cursor(CURSOR_LINE,CURSOR_COLUMN);
 }
 
@@ -107,12 +105,6 @@ void scroll(){
         write_char(CURSOR_LINE, i, ' ', 15, 0);
     }
     place_cursor(CURSOR_LINE - 1, 0);
-}
-
-void console_putbytes(const char *s, int len){
-    for(int i = 0 ; i < len ; i++){
-        treat_char(*(s+(i * sizeof(char))));
-    }
 }
 
 void display_time(void) {

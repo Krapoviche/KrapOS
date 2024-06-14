@@ -15,6 +15,5 @@ void reset_screen();
 void place_cursor(uint32_t lig, uint32_t col);
 void treat_char(char c);
 void scroll();
-void console_putbytes(const char *s, int len);
 void display_time(void);
 #endif

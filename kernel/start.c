@@ -7,6 +7,7 @@
 #include "stdio.h"
 #include "string.h"
 #include "mem.h"
+#include "start.h"
 
 void idle(void){
 	while(1){
@@ -16,27 +17,8 @@ void idle(void){
 	}
 }
 
-void* test_it49(int sn, int arg2, int arg3){
-	if(sn == 0){
-		printf("SOFTWARE INTERUPTED WITH PARAM 1 %d\n",sn);
-		printf("GETPID RETURNS %d\n", getpid());
-		return((void*)getpid());
-	} else if (sn == 1) {
-		printf("SOFTWARE INTERUPTED WITH PARAM 1 %d\n",sn);		
-		printf("SOFTWARE INTERUPTED WITH PARAM 2 %s\n",(char*)arg2);
-		console_putbytes((char *)arg2,arg3);
-		return 0;
-	} else if (sn == 2){
-		printf("SOFTWARE INTERUPTED WITH PARAM 1 %d\n",sn);
-		printf("SOFTWARE INTERUPTED WITH PARAM 2 %d\n",arg2);
-		return 0;
-	} else {return 0;}
-}
-
 void kernel_start(void)
 {
-	// call_debugger(); useless with qemu -s -S
-
 	reset_screen();
 	place_cursor(0, 0);
 
@@ -52,8 +34,7 @@ void kernel_start(void)
 	process_table->running->state = RUNNING;
 
 	void* user_start = (void*)0x1000000;
-	start(user_start, 2048, 1, "user_start", 0);
-
+	start(user_start, 4096, 1, "user_start", 0);
 
 	idle();
 	return;

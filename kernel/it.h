@@ -3,6 +3,7 @@
 
 #define IDT 0x1000
 #define CST_IT 0x8E00
+#define USER_CST_IT 0xEE00
 
 #ifndef uint8_t
 #include <stdint.h>

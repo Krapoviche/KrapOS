@@ -12,7 +12,8 @@ void init_IT_handlers(int32_t num_IT, void (*traitant)(void)) {
 
     *tableaddr = (KERNEL_CS << 16) + ((uint32_t) traitant & 0x0000FFFF);
     tableaddr += 1;
-    *tableaddr = ((uint32_t)traitant & 0xFFFF0000) + (CST_IT);
+    if(num_IT == 32) *tableaddr = ((uint32_t)traitant & 0xFFFF0000) + (CST_IT);
+    else if(num_IT == 49) *tableaddr = ((uint32_t)traitant & 0xFFFF0000) + (USER_CST_IT);;
 }
 
 void init_clock(void){

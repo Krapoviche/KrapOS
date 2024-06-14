@@ -1,6 +1,19 @@
-#define GETPID 0
-#define CONSOLE_PUTBYTES 1
-#define GETPRIO 2
+#define SYS_WRITE 1
+#define SYS_MILLISLEEP 35
+#define SYS_GETPID 39
+#define SYS_START 56 // sys_clone in linux
+#define SYS_EXIT 60
+#define SYS_KILL 62
+#define SYS_GETPPID 110
+#define SYS_GETPRIORITY 140
+#define SYS_SETPRIORITY 141
+#define SYS_MQ_OPEN 240
+#define SYS_MQ_UNLINK 241
+#define SYS_MQ_SEND 242
+#define SYS_MQ_RECEIVE 243
+#define SYS_MQ_RESET 244 // sys_notify in linux
+#define SYS_MQ_COUNT 245 // sys_mq_getsetattr in linux
+#define SYS_WAITID 247
 
 
 #define SYSCALL0(name, SYSCALLID) \
@@ -103,6 +116,22 @@ name: \
     ret
 
 
-SYSCALL0(getpid, GETPID)
-SYSCALL2(console_putbytes, CONSOLE_PUTBYTES)
-SYSCALL1(getprio, GETPRIO)
+SYSCALL0(getpid, SYS_GETPID)
+SYSCALL0(getppid, SYS_GETPPID)
+
+SYSCALL1(millisleep, SYS_MILLISLEEP)
+SYSCALL1(getprio, SYS_GETPRIORITY)
+SYSCALL1(exit, SYS_EXIT)
+SYSCALL1(kill, SYS_KILL)
+SYSCALL1(pcreate, SYS_MQ_OPEN)
+SYSCALL1(pdelete, SYS_MQ_UNLINK)
+SYSCALL1(preset, SYS_MQ_RESET)
+
+SYSCALL2(console_putbytes, SYS_WRITE)
+SYSCALL2(chprio, SYS_SETPRIORITY)
+SYSCALL2(psend, SYS_MQ_SEND)
+SYSCALL2(preceive, SYS_MQ_RECEIVE)
+SYSCALL2(pcount, SYS_MQ_COUNT)
+SYSCALL2(waitpid, SYS_WAITID)
+
+SYSCALL5(start, SYS_START)
