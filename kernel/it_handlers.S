@@ -1,3 +1,7 @@
+    .globl do_iret
+do_iret:
+    iret
+
     .globl IT_32_handler
 IT_32_handler:
     pushl %eax

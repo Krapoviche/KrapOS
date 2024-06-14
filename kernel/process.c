@@ -3,8 +3,10 @@
 #include "string.h"
 #include "stdio.h"
 #include "mem.h"
+#include "user_stack_mem.h"
 #include "it.h"
 #include "stdarg.h"
+#include "processor_structs.h"
 
 process_table_t* process_table;
 uint32_t idle_registers[REGISTER_SAVE_COUNT];
@@ -102,32 +104,54 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
                 // Set the process pid & state
                 new_proc->pid = alloc_free_pid(new_proc);
 
+                // Add necessary space to user stacksize
+                ssize = ssize + argc + 2;
+                new_proc->stack_size = ssize;
+
                 // Set Parent PID, add to parent's children
                 // After checking wether it's orphan processes or not
                 if(process_table->running != NULL){
+                    // Set ppid to running
                     new_proc->ppid = process_table->running->pid;
                     queue_add(new_proc,process_table->running->children,process_t,parent_link,pid);
-                } else {
+                    
+                    // Alloc user stack in user memory
+                    new_proc->user_stack = user_stack_alloc(sizeof(uint32_t) * ssize);
+
+                    // Potential params in the stack
+                    for(uint32_t i = 0; i < argc; i++) {
+                        void* arg = va_arg(args, void*);
+                        new_proc->user_stack[ssize - argc + i] = (uint32_t)arg;
+                    }
+
+                    new_proc->user_stack[ssize - argc - 2] = (uint32_t)do_return;
+
+                    // // Deal with the kernel stack (fill it properly)
+                    new_proc->kernel_stack[KERNEL_STACK_SIZE - 1] = SS_USER;
+                    new_proc->kernel_stack[KERNEL_STACK_SIZE - 2] = (uint32_t)&new_proc->user_stack[ssize - argc - 1];
+                    new_proc->kernel_stack[KERNEL_STACK_SIZE - 3] = EFLAGS;
+                    new_proc->kernel_stack[KERNEL_STACK_SIZE - 4] = CS_USER;
+                    new_proc->kernel_stack[KERNEL_STACK_SIZE - 5] = (uint32_t)pt_func;
+                    new_proc->kernel_stack[KERNEL_STACK_SIZE - 6] = (uint32_t)do_iret;
+                    
+                    // Put the kernel stack function address in the save zone for the first context switch
+                    new_proc->register_save_zone[1] = (uint32_t)&new_proc->kernel_stack[KERNEL_STACK_SIZE - 6];
+
+                } 
+                // Idle. No user stack, just deal with the standard kernel stack
+                else {
+                    // Set ppid to -1 (orphan)
                     new_proc->ppid = -1;
+                    
+                    new_proc->kernel_stack[KERNEL_STACK_SIZE - 2] = (uint32_t)pt_func;
+                    new_proc->kernel_stack[KERNEL_STACK_SIZE - 1] = (uint32_t)do_return;
+                    new_proc->register_save_zone[1] = (uint32_t)&new_proc->kernel_stack[KERNEL_STACK_SIZE - 2];
                 }
 
                 // Initialize Children queue
                 new_proc->children = mem_alloc(sizeof(link));
                 link head_children_queue = LIST_HEAD_INIT(*new_proc->children);
                 memcpy(new_proc->children, &head_children_queue, sizeof(link));
-
-                // Allocate memory for the stack & fill it with the function pointer and the stop function as exit()
-                ssize = ssize + argc + 2;
-                new_proc->stack_size = ssize;
-                new_proc->stack = mem_alloc(sizeof(uint32_t) * ssize);
-                new_proc->stack[ssize - argc - 2] = (uint32_t)pt_func;
-                new_proc->stack[ssize - argc - 1] = (uint32_t)do_return;
-                // Potential params in the stack
-                for(uint32_t i = 0; i < argc; i++) {
-                    void* arg = va_arg(args, void*);
-                    new_proc->stack[ssize - argc + i] = (uint32_t)arg;
-                }
-                new_proc->register_save_zone[1] = (uint32_t)&new_proc->stack[ssize - argc - 2];
 
                 // Add to waiting queue
                 set_runnable(new_proc);
@@ -185,13 +209,19 @@ void scheduler(){
         if(old_proc->state == DYING){
             old_proc->priority = 0;
             queue_add(old_proc,process_table->dead_queue,process_t,queue_link,priority);
-        } else if (old_proc->state != SLEEPING && old_proc->state != ZOMBIE && old_proc->state != LOCKED_MESS) {
+        } else if (old_proc->state == RUNNING) {
             old_proc->state = RUNNABLE;
         }
         elected_proc->state = RUNNING;
 
         // Update running process
         process_table->running = elected_proc;
+
+        // TSS address is read when an interruption happens (provoked by the userspace)
+        // We store at this address the top of the kernel_stack so that
+        // when interrupting (and switching from userspace to kernelspace)
+        // the stack is properly switched the same way.
+        tss.esp0 = (uint32_t)&elected_proc->kernel_stack[KERNEL_STACK_SIZE - 1];
 
         // Context switch between the two processes
         ctx_sw(old_proc->register_save_zone, elected_proc->register_save_zone);
@@ -274,7 +304,7 @@ void clear_dead_processes(){
         process = queue_out(process_table->dead_queue,process_t,queue_link);
         process_table->table[process->pid] = NULL;
         mem_free(process->children, sizeof(link));
-        mem_free(process->stack, sizeof(uint32_t)*process->stack_size);
+        user_stack_free(process->user_stack, sizeof(uint32_t)*process->stack_size);
         mem_free(process, sizeof(process_t));
         process_table->nbproc -= 1;
 
