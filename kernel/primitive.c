@@ -3,6 +3,7 @@
 #include "message.h"
 #include "cpu.h"
 #include "it.h"
+#include "screen.h"
 
 int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name, void *arg) {
     return start_multi_args(ptfunc, ssize, prio, name, 1, arg);
@@ -14,6 +15,12 @@ int getprio(int pid){
         return process->priority;
     }
     return -1;
+}
+
+void console_putbytes(const char *s, int len){
+    for(int i = 0 ; i < len ; i++){
+        treat_char(*(s+(i * sizeof(char))));
+    }
 }
 
 int chprio(int pid, int newprio){

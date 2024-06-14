@@ -14,6 +14,13 @@ extern void ctx_sw(uint32_t* old, uint32_t* new);
 int chprio(int pid, int newprio);
 
 /**
+ * @brief Write bytes to the console
+ * @param s: string to write
+ * @param len: length of the string
+*/
+void console_putbytes(const char *s, int len);
+
+/**
  * @brief Gets the process id of the currently running process
  * @return the process id of the currently running process
 */
