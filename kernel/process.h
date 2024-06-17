@@ -50,6 +50,7 @@ typedef struct process_table_t
     link* sleeping_queue;
     link* dead_queue;
     link* zombie_queue;
+    link* io_queue;
     process_t* running;
     uint32_t nbproc;
 } process_table_t;

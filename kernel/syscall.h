@@ -19,5 +19,6 @@ typedef enum syscall{
     SYS_MQ_RESET = 244,
     SYS_MQ_COUNT = 245,
     SYS_WAITID = 247,
-    SYS_WAITCLOCK = 300
+    SYS_WAITCLOCK = 300,
+    SYS_CONSREAD = 301
 } syscall;

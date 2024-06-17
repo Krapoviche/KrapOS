@@ -1,6 +1,7 @@
 #include "syscall.h"
 #include "it.h"
 #include "primitive.h"
+#include "kbd.h"
 
 void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6){
 	switch (sn){
@@ -47,6 +48,8 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5, int ar
 			return (void*)pcount(arg1, (int*)arg2);
 		case SYS_WAITID:
 			return (void*)waitpid(arg1, (int*)arg2);
+		case SYS_CONSREAD:
+			return (void *)cons_read((char *) arg1, arg2);
 		default:
 			arg6 = arg6; // TODO: remove this line, it's just to avoid a warning
 			return 0;

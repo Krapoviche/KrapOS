@@ -26,6 +26,13 @@ void clock_settings(unsigned long *quartz, unsigned long *ticks);
 void console_putbytes(const char *s, int len);
 
 /**
+ * @brief Read characters from the keyboard
+ * @param s: string to read to
+ * @param len: length of the string
+*/
+int cons_read(char *string, unsigned long length);
+
+/**
  * @brief Read current clock
  * @return current clock count
 */

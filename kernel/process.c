@@ -19,17 +19,20 @@ process_table_t* init_process_table(){
     process_table->sleeping_queue = mem_alloc(sizeof(link));
     process_table->dead_queue = mem_alloc(sizeof(link));
     process_table->zombie_queue = mem_alloc(sizeof(link));
+    process_table->io_queue = mem_alloc(sizeof(link));
 
     // Initiate process queues
     link head_runnable_queue = LIST_HEAD_INIT(*process_table->runnable_queue);
     link head_sleeping_queue = LIST_HEAD_INIT(*process_table->sleeping_queue);
     link head_dead_queue = LIST_HEAD_INIT(*process_table->dead_queue);
     link head_zombie_queue = LIST_HEAD_INIT(*process_table->zombie_queue);
+    link head_io_queue = LIST_HEAD_INIT(*process_table->io_queue);
 
     memcpy(process_table->runnable_queue,&head_runnable_queue, sizeof(link));
     memcpy(process_table->sleeping_queue,&head_sleeping_queue, sizeof(link));
     memcpy(process_table->dead_queue,&head_dead_queue, sizeof(link));
     memcpy(process_table->zombie_queue,&head_zombie_queue, sizeof(link));
+    memcpy(process_table->io_queue,&head_io_queue, sizeof(link));
 
     // Default values
     process_table->nbproc = 0;
@@ -114,7 +117,7 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
                     // Set ppid to running
                     new_proc->ppid = process_table->running->pid;
                     queue_add(new_proc,process_table->running->children,process_t,parent_link,pid);
-                    
+
                     // Alloc user stack in user memory
                     new_proc->user_stack = user_stack_alloc(sizeof(uint32_t) * ssize);
 
@@ -133,16 +136,16 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
                     new_proc->kernel_stack[KERNEL_STACK_SIZE - 4] = CS_USER;
                     new_proc->kernel_stack[KERNEL_STACK_SIZE - 5] = (uint32_t)pt_func;
                     new_proc->kernel_stack[KERNEL_STACK_SIZE - 6] = (uint32_t)do_iret;
-                    
+
                     // Put the kernel stack function address in the save zone for the first context switch
                     new_proc->register_save_zone[1] = (uint32_t)&new_proc->kernel_stack[KERNEL_STACK_SIZE - 6];
 
-                } 
+                }
                 // Idle. No user stack, just deal with the standard kernel stack
                 else {
                     // Set ppid to -1 (orphan)
                     new_proc->ppid = -1;
-                    
+
                     new_proc->kernel_stack[KERNEL_STACK_SIZE - 2] = (uint32_t)pt_func;
                     new_proc->kernel_stack[KERNEL_STACK_SIZE - 1] = (uint32_t)0x1100000;
                     new_proc->register_save_zone[1] = (uint32_t)&new_proc->kernel_stack[KERNEL_STACK_SIZE - 2];

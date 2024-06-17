@@ -17,6 +17,7 @@
 #define SYS_MQ_COUNT 245 // sys_mq_getsetattr in linux
 #define SYS_WAITID 247
 #define SYS_WAITCLOCK 300 // No linux equivalent
+#define SYS_CONSREAD 301 // Same
 
 
 #define SYSCALL0(name, SYSCALLID) \
@@ -139,5 +140,6 @@ SYSCALL2(preceive, SYS_MQ_RECEIVE)
 SYSCALL2(pcount, SYS_MQ_COUNT)
 SYSCALL2(waitpid, SYS_WAITID)
 SYSCALL2(clock_settings, SYS_CLOCK_GETRES)
+SYSCALL2(cons_read, SYS_CONSREAD)
 
 SYSCALL5(start, SYS_START)
