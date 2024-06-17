@@ -115,3 +115,9 @@ void display_time(void) {
         write_char(0, NB_COL-8+i, formatted_time[i], 15, 0);
     }
 }
+
+void console_putbytes(const char *s, int len){
+    for(int i = 0 ; i < len ; i++){
+        treat_char(*(s+(i * sizeof(char))));
+    }
+}

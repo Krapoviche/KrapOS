@@ -1,7 +1,6 @@
-void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6);
+void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5);
 
 typedef enum syscall{
-    SYS_WRITE = 1,
     SYS_MILLISLEEP = 35,
     SYS_GETPID = 39,
     SYS_START = 56,
@@ -20,5 +19,7 @@ typedef enum syscall{
     SYS_MQ_COUNT = 245,
     SYS_WAITID = 247,
     SYS_WAITCLOCK = 300,
-    SYS_CONSREAD = 301
+    SYS_CONSREAD = 301,
+    SYS_CONSWRITE = 302,
+    SYS_CONSECHO = 303
 } syscall;

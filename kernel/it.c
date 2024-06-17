@@ -4,6 +4,7 @@
 #include "screen.h"
 #include "segment.h"
 #include "process.h"
+#include "kbd.h"
 
 uint32_t ticks = 0;
 
@@ -12,9 +13,11 @@ void init_IT_handlers(int32_t num_IT, void (*traitant)(void)) {
 
     *tableaddr = (KERNEL_CS << 16) + ((uint32_t) traitant & 0x0000FFFF);
     tableaddr += 1;
-    if(num_IT == 32) *tableaddr = ((uint32_t)traitant & 0xFFFF0000) + (CST_IT);
-    else if(num_IT == 49) *tableaddr = ((uint32_t)traitant & 0xFFFF0000) + (USER_CST_IT);
-    else if(num_IT == 33) *tableaddr = ((uint32_t)traitant & 0xFFFF0000) + (USER_CST_IT);
+
+    uint32_t cst_it = USER_CST_IT;
+    if (num_IT == 32) cst_it = CST_IT;
+    
+    *tableaddr = ((uint32_t)traitant & 0xFFFF0000) + (cst_it);
 }
 
 void init_clock(void){
@@ -37,6 +40,11 @@ void tic_PIT(void){
     ticks++;
 
     scheduler();
+}
+
+void keyb_PIT(int scancode){
+    outb(0x20,0x20);
+    do_scancode(scancode);
 }
 
 void mask_IRQ(uint32_t IRQ_number, bool mask) {

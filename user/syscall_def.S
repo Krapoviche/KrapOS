@@ -1,4 +1,3 @@
-#define SYS_WRITE 1
 #define SYS_MILLISLEEP 35
 #define SYS_GETPID 39
 #define SYS_START 56 // sys_clone in linux
@@ -16,8 +15,11 @@
 #define SYS_MQ_RESET 244 // sys_notify in linux
 #define SYS_MQ_COUNT 245 // sys_mq_getsetattr in linux
 #define SYS_WAITID 247
-#define SYS_WAITCLOCK 300 // No linux equivalent
-#define SYS_CONSREAD 301 // Same
+// Custom syscalls not inspired by linux syscalls
+#define SYS_WAITCLOCK 300
+#define SYS_CONSREAD 301
+#define SYS_CONSWRITE 302
+#define SYS_CONSECHO 303
 
 
 #define SYSCALL0(name, SYSCALLID) \
@@ -132,8 +134,8 @@ SYSCALL1(pcreate, SYS_MQ_OPEN)
 SYSCALL1(pdelete, SYS_MQ_UNLINK)
 SYSCALL1(preset, SYS_MQ_RESET)
 SYSCALL1(wait_clock, SYS_WAITCLOCK)
+SYSCALL1(cons_echo, SYS_CONSECHO)
 
-SYSCALL2(console_putbytes, SYS_WRITE)
 SYSCALL2(chprio, SYS_SETPRIORITY)
 SYSCALL2(psend, SYS_MQ_SEND)
 SYSCALL2(preceive, SYS_MQ_RECEIVE)
@@ -141,5 +143,6 @@ SYSCALL2(pcount, SYS_MQ_COUNT)
 SYSCALL2(waitpid, SYS_WAITID)
 SYSCALL2(clock_settings, SYS_CLOCK_GETRES)
 SYSCALL2(cons_read, SYS_CONSREAD)
+SYSCALL2(cons_write, SYS_CONSWRITE)
 
 SYSCALL5(start, SYS_START)

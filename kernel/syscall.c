@@ -3,11 +3,8 @@
 #include "primitive.h"
 #include "kbd.h"
 
-void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6){
+void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5) {
 	switch (sn){
-		case SYS_WRITE:
-			console_putbytes((char *)arg1,arg2);
-			return 0;
 		case SYS_CLOCK_GETTIME:
 			return (void *)current_clock();
 		case SYS_CLOCK_GETRES:
@@ -49,9 +46,14 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5, int ar
 		case SYS_WAITID:
 			return (void*)waitpid(arg1, (int*)arg2);
 		case SYS_CONSREAD:
-			return (void *)cons_read((char *) arg1, arg2);
-		default:
-			arg6 = arg6; // TODO: remove this line, it's just to avoid a warning
+			return (void *)cons_read((char *)arg1, arg2);
+		case SYS_CONSWRITE:
+			cons_write((const char *)arg1, (long)arg2);
 			return 0;
+		case SYS_CONSECHO:
+			cons_echo(arg1);
+			return 0;
+		default:
+			return (void*)-1;
 	}
 }

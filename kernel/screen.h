@@ -16,4 +16,11 @@ void place_cursor(uint32_t lig, uint32_t col);
 void treat_char(char c);
 void scroll();
 void display_time(void);
+/**
+ * @brief Write bytes to the console
+ * @param s: string to write
+ * @param len: length of the string
+*/
+void console_putbytes(const char *s, int len);
+
 #endif

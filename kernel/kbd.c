@@ -8,6 +8,7 @@
 
 kbd_buf keyboard_buffer;
 bool writing;
+int echo = 1;
 
 void init_keyboard_buffer(void){
     keyboard_buffer.count = 0;
@@ -32,16 +33,26 @@ void keyboard_data(char *str){
     char c = str[i];
 
     while(c != '\0' && writing){
-        if(keyboard_buffer.count != KBD_BUF_SIZE){
+        if(keyboard_buffer.count < KBD_BUF_SIZE){
             // Write typed char to the kbd buffer
             keyboard_buffer.buf[keyboard_buffer.write_head] = c;
 
-            // printf("%d\n",keyboard_buffer.read_head);
-            // printf("%c\n",keyboard_buffer.buf[keyboard_buffer.read_head]);
-
-            // Increase kbd buffers counters
-            keyboard_buffer.write_head = (keyboard_buffer.write_head + 1) % KBD_BUF_SIZE;
-            keyboard_buffer.count++;
+            // If the char is a backspace, remove the last char from the buffer
+            if (c == 127) {
+                if (keyboard_buffer.count > 0) {
+                    keyboard_buffer.write_head = (keyboard_buffer.write_head - 1) % KBD_BUF_SIZE;
+                    keyboard_buffer.count--;
+                }
+            } else {
+                // Echo the char to the console if enabled
+                if (echo) {
+                    if (c == '\r') cons_write("\n", 1);
+                    cons_write(&c, 1);
+                }
+                // Increase kbd buffers counters
+                keyboard_buffer.write_head = (keyboard_buffer.write_head + 1) % KBD_BUF_SIZE;
+                keyboard_buffer.count++;
+            }
 
             // Wake up process waiting for I/O
             if(!queue_empty(process_table->io_queue) && c == 13){
@@ -56,41 +67,9 @@ void keyboard_data(char *str){
     }
 }
 
-int cons_read(char *string, unsigned long length){
-    if(length <= 0) return 0;
-    writing = true;
-    long unsigned int read = 0;
-    char buffer[length];
-    
-    // If precedent call left a cons_read 
-    if(keyboard_buffer.buf[keyboard_buffer.read_head] == 13){
-        keyboard_buffer.count--;
-        keyboard_buffer.read_head = (keyboard_buffer.read_head + 1) % KBD_BUF_SIZE;
-        return 0;
-    }
-
-    // Lock until 13 char
-    process_table->running->state = LOCKED_IO;
-    queue_add(process_table->running, process_table->io_queue, process_t, queue_link, priority);
-    scheduler();
-
-    for(read = 0 ; read < length ; read++){
-        if(keyboard_buffer.buf[keyboard_buffer.read_head] == 13){
-            keyboard_buffer.read_head = (keyboard_buffer.read_head + 1) % KBD_BUF_SIZE;
-            keyboard_buffer.count--;
-            break;
-        }
-        // Copy keyboard buffer to final buffer, atomically
-        buffer[read] = keyboard_buffer.buf[keyboard_buffer.read_head];
-        keyboard_buffer.count--;
-        keyboard_buffer.read_head = (keyboard_buffer.read_head + 1) % KBD_BUF_SIZE;
-    }
-
-    // Copy to caller buffer
-    memcpy(string, buffer, read);
-
-    // End of writing phase
-    writing = false;
-
-    return read;
+void kbd_leds(unsigned char leds){
+    // Write the led status to the keyboard port
+    outb(0xED, 0x60);
+    for (int i = 0; i < 100000; i++);
+    outb(leds, 0x60);
 }

@@ -26,11 +26,24 @@ void clock_settings(unsigned long *quartz, unsigned long *ticks);
 void console_putbytes(const char *s, int len);
 
 /**
+ * @brief Changes the echo mode of the console
+ * @param on: 0 to disable echo, != 0 to enable
+*/
+void cons_echo(int on);
+
+/**
  * @brief Read characters from the keyboard
- * @param s: string to read to
- * @param len: length of the string
+ * @param string: string to read to
+ * @param length: length of the string
 */
 int cons_read(char *string, unsigned long length);
+
+/**
+ * @brief Write bytes to the console
+ * @param s: string to write
+ * @param len: length of the string
+*/
+void cons_write(const char *str, long size);
 
 /**
  * @brief Read current clock

@@ -56,5 +56,6 @@ void cons_write(const char *str, long size);
 
 extern kbd_buf keyboard_buffer;
 extern bool writing;
+extern int echo;
 
 #endif

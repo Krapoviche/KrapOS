@@ -7,3 +7,7 @@ void sleep(unsigned long secs) {
 int wait(int* retvalp) {
     return waitpid(-1, retvalp);
 }
+
+void console_putbytes(const char *s, int len) {
+    cons_write(s, len);
+}
