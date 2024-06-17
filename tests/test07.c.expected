@@ -1,1 +1,1 @@
-1 2 3 4 5 6 7 8 : [0-9]+ changements de contexte sur [0-9]+ tops d'horloge.
+^1 2 3 4 5 6 7 8 : [0-9]+ changements de contexte sur [0-9]+ tops d'horloge\.$

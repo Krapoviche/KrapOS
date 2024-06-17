@@ -61,7 +61,8 @@ affiche_etat()
 		default:
 			c = 4;
 		}
-		assert(c %2 == 0); // utilisation de c pour le compilo
+		int test = c %2 == 0;
+		assert(test); // utilisation de c pour le compilo
 		printf("%c", etat[i]);
 	}
 }

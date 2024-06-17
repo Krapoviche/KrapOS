@@ -53,7 +53,7 @@ void cons_echo(int on) {
 
 int cons_read(char *string, unsigned long length){
     if(length <= 0) return 0;
-    writing = true;
+    writing++;
     long unsigned int read = 0;
     char buffer[length];
     
@@ -85,7 +85,7 @@ int cons_read(char *string, unsigned long length){
     memcpy(string, buffer, read);
 
     // End of writing phase
-    writing = false;
+    writing--;
 
     return read;
 }

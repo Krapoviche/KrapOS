@@ -7,14 +7,14 @@
 #include "queue.h"
 
 kbd_buf keyboard_buffer;
-bool writing;
+int writing;
 int echo = 1;
 
 void init_keyboard_buffer(void){
     keyboard_buffer.count = 0;
     keyboard_buffer.write_head = 0;
     keyboard_buffer.read_head = 0;
-    writing = false;
+    writing = 0;
 }
 
 void kbd_int(void){
@@ -32,7 +32,7 @@ void keyboard_data(char *str){
     int i = 0;
     char c = str[i];
 
-    while(c != '\0' && writing){
+    while(c != '\0' && writing > 0){
         if(keyboard_buffer.count < KBD_BUF_SIZE){
             // Write typed char to the kbd buffer
             keyboard_buffer.buf[keyboard_buffer.write_head] = c;
