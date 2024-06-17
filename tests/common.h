@@ -1,6 +1,18 @@
 #define DUMMY_VAL 78
 #define NR_PHILO 5
 
+__inline__ static void outb(unsigned char value, unsigned short port)
+{
+	__asm__ __volatile__("outb %0, %1" : : "a" (value), "Nd" (port));
+}
+
+__inline__ static unsigned char inb(unsigned short port)
+{
+	unsigned char rega;
+	__asm__ __volatile__("inb %1,%0" : "=a" (rega) : "Nd" (port));
+	return rega;
+}
+
 static void test_it()
 {
 	__asm__ volatile("pushfl; testl $0x200,(%%esp); jnz 0f; sti; nop; cli; 0: addl $4,%%esp\n":::"memory");

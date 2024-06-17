@@ -17,7 +17,7 @@ rm user/start.c && mv user/tests/start.c user/start.c
 rm kernel/start.c && mv user/tests/kernel-start.c kernel/start.c
 
 # Patched screen.c to `printf` directly on 0xE9 using `outb`
-rm kernel/primitive.c && mv user/tests/primitive.c kernel/primitive.c
+rm kernel/screen.c && mv user/tests/screen.c kernel/screen.c
 
 # Store original value of start.c
 start_c=$(cat user/start.c)
