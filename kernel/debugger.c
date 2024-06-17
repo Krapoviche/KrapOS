@@ -272,7 +272,7 @@ void dump_stack(process_t* proc){
 uint32_t get_args_end(process_t* proc){
 	int i = proc->stack_size;
 
-	while((void*)(proc->user_stack[i]) != do_return){
+	while((void*)(proc->user_stack[i]) != (void *)0x1100000){
 		i--;
 	}
 	return i+1;

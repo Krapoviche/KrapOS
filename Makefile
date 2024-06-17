@@ -4,8 +4,11 @@ all:
 	$(MAKE) -C user/ all VERBOSE=$(VERBOSE)
 	$(MAKE) -C kernel/ kernel.bin VERBOSE=$(VERBOSE)
 
-test:
+test-kernel:
 	./kernel/run_tests.sh
+
+test-user:
+	./user/run_tests.sh
 
 docker:
 	docker run -i --platform linux/amd64 --entrypoint 'make' --workdir /psys-base --rm -v $(PWD):/psys-base gcc:11.4.0

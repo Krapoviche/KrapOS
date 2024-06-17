@@ -10,12 +10,27 @@
 */
 int chprio(int pid, int prio);
 
+
+/**
+ * @brief Get clock quartz and ticks settings
+ * @param quartz: pointer where to write the quartz setting
+ * @param ticks: pointer where to write the ticks setting 
+*/
+void clock_settings(unsigned long *quartz, unsigned long *ticks);
+
 /**
  * @brief Write bytes to the console
  * @param s: string to write
  * @param len: length of the string
 */
 void console_putbytes(const char *s, int len);
+
+/**
+ * @brief Read current clock
+ * @return current clock count
+*/
+uint32_t current_clock(void);
+
 
 /**
  * @brief Get the process id of the currently running process
@@ -107,6 +122,12 @@ int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name
  * @param retvalp: pointer to the return value of the waited process
 */
 int wait(int* retvalp);
+
+/**
+ * @brief Waits until time in `clock`
+ * @param clock: clock time to wait to
+*/
+void wait_clock(uint32_t clock);
 
 /**
  * @brief Waits for a child process to end

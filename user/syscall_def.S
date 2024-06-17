@@ -7,6 +7,8 @@
 #define SYS_GETPPID 110
 #define SYS_GETPRIORITY 140
 #define SYS_SETPRIORITY 141
+#define SYS_CLOCK_GETTIME 228
+#define SYS_CLOCK_GETRES 229 // sys_clock_getres in linux
 #define SYS_MQ_OPEN 240
 #define SYS_MQ_UNLINK 241
 #define SYS_MQ_SEND 242
@@ -14,6 +16,7 @@
 #define SYS_MQ_RESET 244 // sys_notify in linux
 #define SYS_MQ_COUNT 245 // sys_mq_getsetattr in linux
 #define SYS_WAITID 247
+#define SYS_WAITCLOCK 300 // No linux equivalent
 
 
 #define SYSCALL0(name, SYSCALLID) \
@@ -118,6 +121,7 @@ name: \
 
 SYSCALL0(getpid, SYS_GETPID)
 SYSCALL0(getppid, SYS_GETPPID)
+SYSCALL0(current_clock, SYS_CLOCK_GETTIME)
 
 SYSCALL1(millisleep, SYS_MILLISLEEP)
 SYSCALL1(getprio, SYS_GETPRIORITY)
@@ -126,6 +130,7 @@ SYSCALL1(kill, SYS_KILL)
 SYSCALL1(pcreate, SYS_MQ_OPEN)
 SYSCALL1(pdelete, SYS_MQ_UNLINK)
 SYSCALL1(preset, SYS_MQ_RESET)
+SYSCALL1(wait_clock, SYS_WAITCLOCK)
 
 SYSCALL2(console_putbytes, SYS_WRITE)
 SYSCALL2(chprio, SYS_SETPRIORITY)
@@ -133,5 +138,6 @@ SYSCALL2(psend, SYS_MQ_SEND)
 SYSCALL2(preceive, SYS_MQ_RECEIVE)
 SYSCALL2(pcount, SYS_MQ_COUNT)
 SYSCALL2(waitpid, SYS_WAITID)
+SYSCALL2(clock_settings, SYS_CLOCK_GETRES)
 
 SYSCALL5(start, SYS_START)
