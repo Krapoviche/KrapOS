@@ -23,7 +23,6 @@
 #define __KBD_H__
 
 #include "stdint.h"
-#include "stdbool.h"
 
 #define KBD_BUF_SIZE 512
 
@@ -55,7 +54,7 @@ int cons_read(char *string, unsigned long length);
 void cons_write(const char *str, long size);
 
 extern kbd_buf keyboard_buffer;
-extern bool writing;
+extern int writing;
 extern int echo;
 
 #endif

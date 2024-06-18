@@ -44,19 +44,24 @@ for test_file in $(ls -v user/tests | grep test | grep -v expected ); do
     i=0
     pattern=$(< user/tests/$test_file.expected)
 
-    # Check wether time is up or the run output matches the exepected regex
-    while ! grep -Eq "$pattern" qemu-output.txt && ! [ $i -eq 10 ]; do
-        sleep 1
-        i=$((i+1))
-    done
-
-    # Display failure or success
-    if grep -Eq "$pattern" qemu-output.txt ; then
-        echo -e "${GREEN}SUCCESS${NC}"
+    if [[ $test_file == *"test19"* ]] ; then
+        echo -e "${RED}This test can only be run manually since it requires user keyboard input${NC}"
     else
-        echo -e "${RED}FAILURE${NC}"
-        echo "Expected : $(cat user/tests/$test_file.expected)"
-        echo "Received : $(cat qemu-output.txt)"
+
+        # Check wether time is up or the run output matches the exepected regex
+        while ! grep -Eq "$pattern" qemu-output.txt && ! [ $i -eq 10 ]; do
+            sleep 1
+            i=$((i+1))
+        done
+
+        # Display failure or success
+        if grep -Eq "$pattern" qemu-output.txt ; then
+            echo -e "${GREEN}SUCCESS${NC}"
+        else
+            echo -e "${RED}FAILURE${NC}"
+            echo "Expected : $(cat user/tests/$test_file.expected)"
+            echo "Received : $(cat qemu-output.txt)"
+        fi
     fi
 
     # End kernel run

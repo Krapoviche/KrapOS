@@ -1,6 +1,6 @@
 #include "libc.h"
 #include "stdio.h"
-#include "../tests/test07.c"
+#include "../tests/test19.c"
 
 void user_start(void)
 {
