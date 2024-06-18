@@ -5,7 +5,7 @@
 #include "queue.h"
 #include "primitive.h"
 
-#define NBPROC 256
+#define NBPROC 1024
 #define REGISTER_SAVE_COUNT 5
 #define MAX_PROC_NAME_SIZE 128
 #define KERNEL_STACK_SIZE 512
