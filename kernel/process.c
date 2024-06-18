@@ -85,7 +85,7 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
     if(process_table->nbproc >= NBPROC)
     { return -1; }
     // Check if the name is not too long
-    if(process_table->nbproc > 1 && (!is_user_address((uint32_t) name) || strlen(name) > MAX_PROC_NAME_SIZE))
+    if(strlen(name) > MAX_PROC_NAME_SIZE)
     { return -2; }
     // Check the stack size requirements
     if (ssize > MAX_STACK_SIZE)
