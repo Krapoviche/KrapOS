@@ -91,6 +91,9 @@ int cons_read(char *string, unsigned long length){
 }
 
 void cons_write(const char *str, long size) {
+    if (!is_user_address((uint32_t)str) || size < 0){
+        return;
+    }
     console_putbytes(str, size);
 }
 
@@ -115,6 +118,9 @@ void wait_clock(uint32_t clock){
 int waitpid(int pid, int *retvalp) {
     if (pid < -1 || pid >= NBPROC) {
         return -2;
+    }
+    if (!is_user_address((uint32_t)retvalp)) {
+        return -3;
     }
     process_t* parent = process_table->running;
     process_t* child = NULL;
