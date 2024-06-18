@@ -42,6 +42,10 @@ void keyboard_data(char *str){
                 if (keyboard_buffer.count > 0) {
                     keyboard_buffer.write_head = (keyboard_buffer.write_head - 1) % KBD_BUF_SIZE;
                     keyboard_buffer.count--;
+                    if(echo){
+                        c = '\b';
+                        cons_write(&c, 1);
+                    }
                 }
             } else {
                 // Echo the char to the console if enabled
