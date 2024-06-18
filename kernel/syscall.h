@@ -21,5 +21,6 @@ typedef enum syscall{
     SYS_WAITCLOCK = 300,
     SYS_CONSREAD = 301,
     SYS_CONSWRITE = 302,
-    SYS_CONSECHO = 303
+    SYS_CONSECHO = 303,
+    SYS_PS = 304
 } syscall;

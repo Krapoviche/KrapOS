@@ -1,11 +1,10 @@
 #include "libc.h"
 #include "stdio.h"
-#include "../tests/test19.c"
+#include "shell.h"
 
 void user_start(void)
 {
-    start((void*)test, 256, 128, "test", 0);
-
+    start((void*)shell, 4096, 32, "shell_1", (void*)true);
     while(1);
 
 }

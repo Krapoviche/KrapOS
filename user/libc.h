@@ -114,6 +114,11 @@ int preceive(int fid, int* message);
 int preset(int fid);
 
 /**
+ * @brief Print current processes state
+*/
+void ps(void);
+
+/**
  * @brief Sends a message to a message queue
  * @param queue The message queue to send to
  * @param content The content of the message

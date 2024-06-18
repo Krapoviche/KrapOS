@@ -3,6 +3,7 @@
 #include "primitive.h"
 #include "process.h"
 #include "kbd.h"
+#include "ps.h"
 
 void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5) {
 	switch (sn){
@@ -56,6 +57,9 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5) {
 			return 0;
 		case SYS_CONSECHO:
 			cons_echo(arg1);
+			return 0;
+		case SYS_PS:
+			ps();
 			return 0;
 		default:
 			return (void*)-1;
