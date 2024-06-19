@@ -242,7 +242,7 @@ int psend(int fid, int message) {
         running->retval = 0;
         running->msg = message;
         scheduler();
-        running->waiting_for = -2;
+        running->waiting_for = INT32_MIN;
         // If queue was reset we need to return negative value
         if (running->retval < 0) {
             return running->retval;
@@ -279,7 +279,7 @@ int preceive(int fid, int* message) {
         running->state = LOCKED_MESS;
         running->retval = 0;
         scheduler();
-        running->waiting_for = -2;
+        running->waiting_for = INT32_MIN;
         // If queue was reset we need to return negative value
         if (running->retval < 0) {
             return running->retval;
@@ -327,6 +327,7 @@ int pdelete(int fid) {
     message_queue_t* queue = get_message_queue(fid);
     int reset = reset_message_queue(queue);
     if(reset == 0){
+        // mem_free(queue->waiting_queue, sizeof(link));
         mem_free(queue, sizeof(message_queue_t));
         message_table[fid] = NULL;
         scheduler();

@@ -6,6 +6,7 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5);
 #include "it.h"
 #include "primitive.h"
 #include "process.h"
+#include "semaphore.h"
 #include "kbd.h"
 #include "debugger.h"
 #include "ps.h"
@@ -16,6 +17,13 @@ typedef enum syscall{
     SYS_START = 56,
     SYS_EXIT = 60,
     SYS_KILL = 62,
+    SYS_SEMCREATE = 63,
+    SYS_SEMDELETE = 64,
+    SYS_SEMSIGNAL = 65,
+    SYS_SEMSWAIT = 66,
+    SYS_SEMRESET = 67,
+    SYS_SEMCOUNT = 68,
+    SYS_SEMTRYWAIT = 69,
     SYS_GETPPID = 110,
     SYS_GETPRIORITY = 140,
     SYS_SETPRIORITY = 141,

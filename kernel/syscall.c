@@ -23,6 +23,23 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5) {
 			return 0;
 		case SYS_KILL:
 			return (void*)kill(arg1);
+		case SYS_SEMCREATE:
+			return (void*)screate((short int)arg1);
+		case SYS_SEMDELETE:
+			return (void*)sdelete(arg1);
+		case SYS_SEMSIGNAL:
+			if ((short int)arg2 > 1) {
+				return (void*)signaln(arg1, (short int)arg2);
+			}
+			return (void*)signal(arg1);
+		case SYS_SEMSWAIT:
+			return (void*)swait(arg1);
+		case SYS_SEMRESET:
+			return (void*)sreset(arg1, (short int)arg2);
+		case SYS_SEMCOUNT:
+			return (void*)scount(arg1);
+		case SYS_SEMTRYWAIT:
+			return (void*)try_wait(arg1);
 		case SYS_GETPPID:
 			return (void*)getppid();
 		case SYS_GETPRIORITY:

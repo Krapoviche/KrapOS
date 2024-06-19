@@ -3,6 +3,13 @@
 #define SYS_START 56 // sys_clone in linux
 #define SYS_EXIT 60
 #define SYS_KILL 62
+#define SYS_SEMCREATE 63 // sys_uname on linux
+#define SYS_SEMDELETE 64 // sys_semget on linux
+#define SYS_SEMSIGNAL 65 // sys_semop on linux
+#define SYS_SEMSWAIT 66 // sys_semctl on linux
+#define SYS_SEMRESET 67 // sys_shmdt on linux
+#define SYS_SEMCOUNT 68 // sys_msgget on linux
+#define SYS_SEMTRYWAIT 69 // sys_msgsnd on linux
 #define SYS_GETPPID 110
 #define SYS_GETPRIORITY 140
 #define SYS_SETPRIORITY 141
@@ -134,12 +141,19 @@ SYSCALL1(millisleep, SYS_MILLISLEEP)
 SYSCALL1(getprio, SYS_GETPRIORITY)
 SYSCALL1(exit, SYS_EXIT)
 SYSCALL1(kill, SYS_KILL)
+SYSCALL1(screate, SYS_SEMCREATE)
+SYSCALL1(sdelete, SYS_SEMDELETE)
+SYSCALL1(swait, SYS_SEMSWAIT)
+SYSCALL1(scount, SYS_SEMCOUNT)
+SYSCALL1(try_wait, SYS_SEMTRYWAIT)
 SYSCALL1(pcreate, SYS_MQ_OPEN)
 SYSCALL1(pdelete, SYS_MQ_UNLINK)
 SYSCALL1(preset, SYS_MQ_RESET)
 SYSCALL1(wait_clock, SYS_WAITCLOCK)
 SYSCALL1(cons_echo, SYS_CONSECHO)
 
+SYSCALL2(signaln, SYS_SEMSIGNAL)
+SYSCALL2(sreset, SYS_SEMRESET)
 SYSCALL2(chprio, SYS_SETPRIORITY)
 SYSCALL2(psend, SYS_MQ_SEND)
 SYSCALL2(preceive, SYS_MQ_RECEIVE)

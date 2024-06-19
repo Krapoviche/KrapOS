@@ -93,7 +93,7 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
 
     // Allocate memory for the new process
     process_t* new_proc = mem_alloc(sizeof(process_t));
-    new_proc->waiting_for = -2; // -1 is actually used for waiting for any child
+    new_proc->waiting_for = INT32_MIN; // -1 is actually used for waiting for any child
     new_proc->awaken_by = -1;
     // Set the proc prio
     new_proc->priority = prio;
@@ -244,16 +244,16 @@ int end_process_life(int32_t pid, int retval){
         // If parent is waiting for this child or for any child
         if (waiting_for == child->pid || waiting_for == -1){
 
-            parent->waiting_for = -2; // reset parent waiting_for
+            parent->waiting_for = INT32_MIN; // reset parent waiting_for
             parent->awaken_by = child->pid; // tell parent who woke it up
             set_runnable(parent); // Wake up parent
         }
-        if(child->state == RUNNABLE || child->state == SLEEPING || child->state == LOCKED_MESS){
+        if(child->state == RUNNABLE || child->state == SLEEPING || child->state == LOCKED_MESS || child->state == LOCKED_SEM){
             queue_del(child, queue_link);
         }
         child->state = ZOMBIE;
     } else {
-        if(child->state == RUNNABLE || child->state == SLEEPING || child->state == LOCKED_MESS){
+        if(child->state == RUNNABLE || child->state == SLEEPING || child->state == LOCKED_MESS || child->state == LOCKED_SEM){
             queue_del(child, queue_link);
             queue_add(child, process_table->dead_queue, process_t, queue_link, priority);
         }
