@@ -128,12 +128,12 @@ int signaln(int sid, short int count) {
         sti();
         return -1;
     }
+    if (INT16_MAX - sem->count < count) {
+        sti();
+        return -2;
+    }
     int woke_up = 0;
     for (short int i = 0; i < count; i++) {
-        if (sem->count == INT16_MAX) {
-            sti();
-            return -2;
-        }
         sem->count++;
         if (sem->count <= 0) {
             woke_up++;

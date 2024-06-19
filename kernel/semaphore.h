@@ -7,7 +7,7 @@
 #define SEMAPHORE_MAX_VALUE 10
 
 typedef struct semaphore {
-    int count;
+    short int count;
     link* queue;
 } semaphore_t;
 

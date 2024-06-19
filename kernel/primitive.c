@@ -327,7 +327,7 @@ int pdelete(int fid) {
     message_queue_t* queue = get_message_queue(fid);
     int reset = reset_message_queue(queue);
     if(reset == 0){
-        // mem_free(queue->waiting_queue, sizeof(link));
+        mem_free(queue->waiting_queue, sizeof(link));
         mem_free(queue, sizeof(message_queue_t));
         message_table[fid] = NULL;
         scheduler();

@@ -12,7 +12,7 @@ void def(int sid) {
 }
 
 void test(void) {
-    assert(getprio() == 128);
+    assert(getprio(getpid()) == 128);
     int sid = screate(0);
     assert(sid >= 0);
     start((void*)def, 256, 127, "def_1", (void*)sid); // 2
