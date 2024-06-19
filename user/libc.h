@@ -51,6 +51,10 @@ void cons_write(const char *str, long size);
 */
 uint32_t current_clock(void);
 
+/**
+ * @brief print stack of current process
+*/
+void dump_stack(void);
 
 /**
  * @brief Get the process id of the currently running process
@@ -112,6 +116,11 @@ int preceive(int fid, int* message);
  * @return 0 if successful, negative value if bad fid
 */
 int preset(int fid);
+
+/**
+ * @brief Print current processes state
+*/
+void ps(void);
 
 /**
  * @brief Sends a message to a message queue

@@ -111,7 +111,7 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
     new_proc->pid = alloc_free_pid(new_proc);
 
     // Add necessary space to user stacksize
-    ssize = ssize + argc + 2;
+    ssize = ssize + argc + 2 + MIN_STACK_SIZE;
     new_proc->stack_size = ssize;
 
     // Set Parent PID, add to parent's children

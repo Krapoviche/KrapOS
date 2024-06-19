@@ -41,6 +41,14 @@ void treat_char(char c){
         case '\b' :
             if(CURSOR_COLUMN != 0){
                 CURSOR_COLUMN -= 1;
+                write_char(CURSOR_LINE,CURSOR_COLUMN,' ',15,0);
+                break;
+            }
+            if(CURSOR_LINE != 0){
+                CURSOR_COLUMN = NB_COL - 1;
+                CURSOR_LINE -= 1;
+                write_char(CURSOR_LINE,CURSOR_COLUMN,' ',15,0);
+                break;
             }
             break;
 
