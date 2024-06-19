@@ -3,12 +3,10 @@
 void abc(int sid) {
     swait(sid);
     printf(" %d", 140-getprio(getpid()));
-    exit(21);
 }
 void def(int sid) {
     printf(" %d", 129-getprio(getpid()));
     signal(sid);
-    exit(42);
 }
 
 void test(void) {
