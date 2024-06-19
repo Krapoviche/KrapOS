@@ -51,6 +51,10 @@ void cons_write(const char *str, long size);
 */
 uint32_t current_clock(void);
 
+/**
+ * @brief print stack of current process
+*/
+void dump_stack(void);
 
 /**
  * @brief Get the process id of the currently running process

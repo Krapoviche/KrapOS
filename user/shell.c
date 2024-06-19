@@ -30,6 +30,8 @@ int shell(bool sp){
             printf("\n");
         } else if (strcmp(chunk, "ps") == 0){
             ps();
+        } else if (strcmp(chunk, "dump_stack") == 0){
+            dump_stack();
         } else if (strcmp(chunk, "test") == 0){
             char ** end = NULL;
             chunk = strtok(NULL," "); 
@@ -44,7 +46,9 @@ int shell(bool sp){
                 unsigned long numtest = strtol(chunk, end, 10);
                 if((void*)chunk != (void*)end && numtest > 0 && numtest <= 20){
                     printf("Running test %ld\n", numtest);
-                    start(tests[numtest - 1], 8096, 128, "test", 0);
+                    int pid = start(tests[numtest - 1], 8096, 128, "test", 0);
+                    waitpid(pid, 0);
+                    printf("\n");
                 } else {
                     printf("Wrong test number : %s\n", chunk);
                 }

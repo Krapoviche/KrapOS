@@ -1,4 +1,14 @@
+#ifndef __SYSCALL_H__
+#define __SYSCALL_H__
+
 void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5);
+
+#include "it.h"
+#include "primitive.h"
+#include "process.h"
+#include "kbd.h"
+#include "debugger.h"
+#include "ps.h"
 
 typedef enum syscall{
     SYS_MILLISLEEP = 35,
@@ -22,5 +32,8 @@ typedef enum syscall{
     SYS_CONSREAD = 301,
     SYS_CONSWRITE = 302,
     SYS_CONSECHO = 303,
-    SYS_PS = 304
+    SYS_PS = 304,
+    SYS_DUMP_STACK = 305
 } syscall;
+
+#endif
