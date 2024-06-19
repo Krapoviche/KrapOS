@@ -11,13 +11,17 @@ mkdir -p run_tests
 cp -r ./* run_tests
 cp -r ./tests ./run_tests/user
 cd run_tests
+rm user/test.c
+rm user/test.h
+rm user/shell.c
+rm user/shell.h
 
 # Patched start.c to handle on-the-fly edition
 rm user/start.c && mv user/tests/start.c user/start.c
 rm kernel/start.c && mv user/tests/kernel-start.c kernel/start.c
 
 # Patched screen.c to `printf` directly on 0xE9 using `outb`
-rm kernel/primitive.c && mv user/tests/primitive.c kernel/primitive.c
+rm kernel/screen.c && mv user/tests/screen.c kernel/screen.c
 
 # Store original value of start.c
 start_c=$(cat user/start.c)
@@ -44,19 +48,24 @@ for test_file in $(ls -v user/tests | grep test | grep -v expected ); do
     i=0
     pattern=$(< user/tests/$test_file.expected)
 
-    # Check wether time is up or the run output matches the exepected regex
-    while ! grep -Eq "$pattern" qemu-output.txt && ! [ $i -eq 10 ]; do
-        sleep 1
-        i=$((i+1))
-    done
-
-    # Display failure or success
-    if grep -Eq "$pattern" qemu-output.txt ; then
-        echo -e "${GREEN}SUCCESS${NC}"
+    if [[ $test_file == *"test19"* ]] ; then
+        echo -e "${RED}This test can only be run manually since it requires user keyboard input${NC}"
     else
-        echo -e "${RED}FAILURE${NC}"
-        echo "Expected : $(cat user/tests/$test_file.expected)"
-        echo "Received : $(cat qemu-output.txt)"
+
+        # Check wether time is up or the run output matches the exepected regex
+        while ! grep -Eq "$pattern" qemu-output.txt && ! [ $i -eq 10 ]; do
+            sleep 1
+            i=$((i+1))
+        done
+
+        # Display failure or success
+        if grep -Eq "$pattern" qemu-output.txt ; then
+            echo -e "${GREEN}SUCCESS${NC}"
+        else
+            echo -e "${RED}FAILURE${NC}"
+            echo "Expected : $(cat user/tests/$test_file.expected)"
+            echo "Received : $(cat qemu-output.txt)"
+        fi
     fi
 
     # End kernel run

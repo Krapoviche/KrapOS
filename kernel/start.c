@@ -8,6 +8,7 @@
 #include "string.h"
 #include "mem.h"
 #include "start.h"
+#include "kbd.h"
 
 void idle(void){
 	while(1){
@@ -24,9 +25,12 @@ void kernel_start(void)
 
 	init_clock();
 	init_IT_handlers(32, IT_32_handler);
+	init_IT_handlers(33, IT_33_handler);
 	init_IT_handlers(49, IT_49_handler);
 	mask_IRQ(0, false);
+	mask_IRQ(1, false);
 	process_table = init_process_table();
+    init_keyboard_buffer();
 
 	start((void*)idle, 256, INT32_MIN, "p_idle", 0);
 

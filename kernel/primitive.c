@@ -4,6 +4,7 @@
 #include "cpu.h"
 #include "it.h"
 #include "screen.h"
+#include "kbd.h"
 
 int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name, void *arg) {
     return start_multi_args(ptfunc, ssize, prio, name, 1, arg);
@@ -15,12 +16,6 @@ int getprio(int pid){
         return process->priority;
     }
     return -1;
-}
-
-void console_putbytes(const char *s, int len){
-    for(int i = 0 ; i < len ; i++){
-        treat_char(*(s+(i * sizeof(char))));
-    }
 }
 
 int chprio(int pid, int newprio){
@@ -50,6 +45,56 @@ int chprio(int pid, int newprio){
         return prio;
     }
     return -1;
+}
+
+void cons_echo(int on) {
+    echo = on;
+}
+
+int cons_read(char *string, unsigned long length){
+    if(length <= 0) return 0;
+    writing++;
+    long unsigned int read = 0;
+    char buffer[length];
+    
+    // If precedent call left a cons_read 
+    if(keyboard_buffer.buf[keyboard_buffer.read_head] == 13){
+        keyboard_buffer.count--;
+        keyboard_buffer.read_head = (keyboard_buffer.read_head + 1) % KBD_BUF_SIZE;
+        return 0;
+    }
+
+    // Lock until 13 char
+    process_table->running->state = LOCKED_IO;
+    queue_add(process_table->running, process_table->io_queue, process_t, queue_link, priority);
+    scheduler();
+
+    for(read = 0 ; read < length ; read++){
+        if(keyboard_buffer.buf[keyboard_buffer.read_head] == 13){
+            keyboard_buffer.read_head = (keyboard_buffer.read_head + 1) % KBD_BUF_SIZE;
+            keyboard_buffer.count--;
+            break;
+        }
+        // Copy keyboard buffer to final buffer, atomically
+        buffer[read] = keyboard_buffer.buf[keyboard_buffer.read_head];
+        keyboard_buffer.count--;
+        keyboard_buffer.read_head = (keyboard_buffer.read_head + 1) % KBD_BUF_SIZE;
+    }
+
+    // Copy to caller buffer
+    memcpy(string, buffer, read);
+
+    // End of writing phase
+    writing--;
+
+    return read;
+}
+
+void cons_write(const char *str, long size) {
+    if (size < 0){
+        return;
+    }
+    console_putbytes(str, size);
 }
 
 int getpid(void){
@@ -197,7 +242,7 @@ int psend(int fid, int message) {
         running->retval = 0;
         running->msg = message;
         scheduler();
-        running->waiting_for = -2;
+        running->waiting_for = INT32_MIN;
         // If queue was reset we need to return negative value
         if (running->retval < 0) {
             return running->retval;
@@ -234,7 +279,7 @@ int preceive(int fid, int* message) {
         running->state = LOCKED_MESS;
         running->retval = 0;
         scheduler();
-        running->waiting_for = -2;
+        running->waiting_for = INT32_MIN;
         // If queue was reset we need to return negative value
         if (running->retval < 0) {
             return running->retval;
@@ -282,6 +327,7 @@ int pdelete(int fid) {
     message_queue_t* queue = get_message_queue(fid);
     int reset = reset_message_queue(queue);
     if(reset == 0){
+        mem_free(queue->waiting_queue, sizeof(link));
         mem_free(queue, sizeof(message_queue_t));
         message_table[fid] = NULL;
         scheduler();

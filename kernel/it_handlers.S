@@ -16,6 +16,20 @@ IT_32_handler:
 
     iret
 
+    .globl IT_33_handler
+IT_33_handler:
+    pushl %eax
+    pushl %edx
+    pushl %ecx
+
+    call kbd_int
+
+    popl %ecx
+    popl %edx
+    popl %eax
+
+    iret
+
     .globl IT_49_handler
 IT_49_handler:
     pushl %esi

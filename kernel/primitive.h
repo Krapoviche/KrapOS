@@ -14,11 +14,25 @@ extern void ctx_sw(uint32_t* old, uint32_t* new);
 int chprio(int pid, int newprio);
 
 /**
- * @brief Write bytes to the console
- * @param s: string to write
- * @param len: length of the string
+ * @brief Changes the echo mode of the console
+ * @param on: 0 to disable echo, != 0 to enable
 */
-void console_putbytes(const char *s, int len);
+void cons_echo(int on);
+
+/**
+ * @brief Reads from the terminal
+ * @param string: address to write string to
+ * @param length: length of the string
+ * @return the number of characters read
+ */
+int cons_read(char *string, unsigned long length);
+
+/**
+ * @brief Sends to the terminal the string of length size at addresse str
+ * @param str: string to write
+ * @param size: length of the string
+*/
+void cons_write(const char *str, long size);
 
 /**
  * @brief Gets the process id of the currently running process

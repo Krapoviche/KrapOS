@@ -5,9 +5,10 @@
 #include "queue.h"
 #include "primitive.h"
 
-#define NBPROC 30
+#define NBPROC 1024
 #define REGISTER_SAVE_COUNT 5
 #define MAX_PROC_NAME_SIZE 128
+#define MIN_STACK_SIZE 16
 #define KERNEL_STACK_SIZE 512
 #define TSS_ADDRESS 0x20000
 #define SS_KERNEL 0x18
@@ -50,11 +51,13 @@ typedef struct process_table_t
     link* sleeping_queue;
     link* dead_queue;
     link* zombie_queue;
+    link* io_queue;
     process_t* running;
     uint32_t nbproc;
 } process_table_t;
 
 process_table_t* init_process_table();
+int is_user_address(uint32_t addr);
 int count_queue_processes(link* queue);
 void set_runnable(process_t* proc);
 int32_t alloc_free_pid(process_t* proc);
