@@ -122,7 +122,13 @@ unsigned long current_clock(void);
 void wait_clock(unsigned long wakeup);
 int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name, void *arg);
 int waitpid(int pid, int *retval);
-
+int screate(short int count);
+int sdelete(int sem);
+int signal(int sem);
+int sreset(int sem, short int count);
+int swait(int sem);
+int try_wait(int sem);
+int signaln(int sem, short int count);
 /*
  * Pour la soutenance, devrait afficher la liste des processus actifs, des
  * files de messages utilisees et toute autre info utile sur le noyau.
@@ -2614,6 +2620,93 @@ test20(void)
 	}
 }
 
+void swait1(int sid) {
+    swait(sid);
+    printf(" %d", 140-getprio(getpid()));
+}
+void signal1(int sid) {
+    printf(" %d", 129-getprio(getpid()));
+    signal(sid);
+}
+
+void
+test21(void) {
+    assert(getprio(getpid()) == 128);
+    int sid = screate(0);
+    assert(sid >= 0);
+    start((void*)signal1, 256, 127, "signal_1", (void*)sid); // 2
+    printf("1");
+    start((void*)swait1, 256, 137, "swait_1", (void*)sid); // 3
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    start((void*)signal1, 256, 125, "signal_2", (void*)sid); // 4
+    start((void*)swait1, 256, 135, "swait_2", (void*)sid); // 5
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    start((void*)swait1, 256, 131, "swait_3", (void*)sid); // 9
+    start((void*)swait1, 256, 129, "swait_4", (void*)sid); // 11
+    start((void*)swait1, 256, 133, "swait_5", (void*)sid); // 7
+    start((void*)signal1, 256, 121, "signal_3", (void*)sid); // 8
+    start((void*)signal1, 256, 119, "signal_4", (void*)sid); // 10
+    start((void*)signal1, 256, 123, "signal_5", (void*)sid); // 6
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    assert(try_wait(sid) == -3);
+    printf(" 12.");
+}
+
+void swait2(int sid) {
+    int sw = swait(sid);
+    if (140 - getprio(getpid()) <= 3) {
+        assert(sw == -4);
+    } else if (140 - getprio(getpid()) <= 6) {
+        assert(sw == -3);
+    } else {
+        assert(sw == 0);
+    }
+    printf(" %d", 140-getprio(getpid()));
+}
+void signal2(int sid) {
+    printf(" %d", 129-getprio(getpid()));
+    signal(sid);
+}
+
+void
+test22(void) {
+    assert(getprio(getpid()) == 128);
+    int sid = screate(0);
+    assert(sid >= 0);
+    start((void*)swait2, 256, 137, "swait_1", (void*)sid);
+    start((void*)swait2, 256, 138, "swait_2", (void*)sid);
+    printf("1");
+    sreset(sid, 0);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    start((void*)swait2, 256, 134, "swait_3", (void*)sid);
+    start((void*)swait2, 256, 135, "swait_4", (void*)sid);
+    printf(" 4");
+    sdelete(sid);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    assert(swait(sid) == -1);
+    sid = screate(2);
+    start((void*)swait2, 256, 133, "swait_5", (void*)sid);
+    start((void*)swait2, 256, 132, "swait_6", (void*)sid);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    start((void*)swait2, 256, 129, "swait_7", (void*)sid);
+    printf(" 9");
+    start((void*)signal2, 256, 119, "signal_1", (void*)sid);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    assert(try_wait(sid) == -3);
+    printf(" 12.");
+}
+
 /*******************************************************************************
  * Fin des tests
  ******************************************************************************/
@@ -2650,6 +2743,8 @@ quit(void)
 	{"18", test18},
 	{"19", test19},
 	{"20", test20},
+	{"21", test21},
+	{"22", test22},
 	{"si", sys_info},
 	{"a", auto_test},
 	{"auto", auto_test},
@@ -2674,7 +2769,7 @@ int
 test_run(int n)
 {
 	assert(getprio(getpid()) == 128);
-	if ((n < 1) || (n > 20)) {
+	if ((n < 1) || (n > 22)) {
 		printf("%d: unknown test\n", n);
 	} else {
 		commands[n - 1].f();
@@ -2685,7 +2780,7 @@ test_run(int n)
 int
 test_proc(void *arg)
 {
-	char buffer[20];
+	char buffer[22];
 
 	(void)arg;
 	assert(getprio(getpid()) == 128);
@@ -2702,8 +2797,8 @@ test_proc(void *arg)
 
 	while (1) {
 		int i = 0;
-		printf("Test (1-20, auto) : ");
-		cons_gets(buffer, 20);
+		printf("Test (1-22, auto) : ");
+		cons_gets(buffer, 22);
 		while (commands[i].name && strcmp(commands[i].name, buffer)) i++;
 		if (!commands[i].name) {
 			printf("%s: unknown test\n", buffer);
