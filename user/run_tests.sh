@@ -11,6 +11,10 @@ mkdir -p run_tests
 cp -r ./* run_tests
 cp -r ./tests ./run_tests/user
 cd run_tests
+rm user/test.c
+rm user/test.h
+rm user/shell.c
+rm user/shell.h
 
 # Patched start.c to handle on-the-fly edition
 rm user/start.c && mv user/tests/start.c user/start.c
