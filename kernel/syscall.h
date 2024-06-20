@@ -10,6 +10,7 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5);
 #include "kbd.h"
 #include "debugger.h"
 #include "ps.h"
+#include "pci.h"
 
 typedef enum syscall{
     SYS_MILLISLEEP = 35,
@@ -41,7 +42,8 @@ typedef enum syscall{
     SYS_CONSWRITE = 302,
     SYS_CONSECHO = 303,
     SYS_PS = 304,
-    SYS_DUMP_STACK = 305
+    SYS_DUMP_STACK = 305,
+    SYS_LSPCI = 308
 } syscall;
 
 #endif

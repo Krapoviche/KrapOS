@@ -32,6 +32,8 @@ int shell(bool sp){
             ps();
         } else if (strcmp(chunk, "dump_stack") == 0){
             dump_stack();
+        } else if (strcmp(chunk, "lspci") == 0){
+            lspci();
         } else if (strcmp(chunk, "test") == 0){
             char ** end = NULL;
             chunk = strtok(NULL," "); 
