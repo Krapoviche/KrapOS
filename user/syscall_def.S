@@ -1,5 +1,6 @@
 #define SYS_MILLISLEEP 35
 #define SYS_GETPID 39
+#define SYS_GETNAME 40 // sys_sendfile in linux
 #define SYS_START 56 // sys_clone in linux
 #define SYS_EXIT 60
 #define SYS_KILL 62
@@ -140,6 +141,7 @@ SYSCALL0(dump_stack, SYS_DUMP_STACK)
 SYSCALL0(lspci, SYS_LSPCI)
 
 SYSCALL1(millisleep, SYS_MILLISLEEP)
+SYSCALL1(getname, SYS_GETNAME)
 SYSCALL1(getprio, SYS_GETPRIORITY)
 SYSCALL1(exit, SYS_EXIT)
 SYSCALL1(kill, SYS_KILL)

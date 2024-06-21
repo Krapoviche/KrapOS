@@ -57,6 +57,12 @@ uint32_t current_clock(void);
 void dump_stack(void);
 
 /**
+ * @brief Get the process name
+ * @param name: pointer to the string where the name should be stored
+*/
+void getname(char *name);
+
+/**
  * @brief Get the process id of the currently running process
  * @return the process id of the currently running process
 */

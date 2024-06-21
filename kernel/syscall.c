@@ -15,6 +15,9 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5) {
 			return 0;
 		case SYS_GETPID:
 			return (void*)getpid();
+		case SYS_GETNAME:
+			strcpy((char *)arg1, getname());
+			return 0;
 		case SYS_START:
 			if (!is_user_address((uint32_t)arg4)) { return (void*)-1; }
 			return (void*)start((void*)arg1, (unsigned long)arg2, arg3, (const char*)arg4, (void*)arg5);
