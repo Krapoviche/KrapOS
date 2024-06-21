@@ -76,6 +76,9 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5) {
 		case SYS_DUMP_STACK:
 			dump_stack(process_table->running);
 			return 0;
+		case SYS_LSPCI:
+			lspci();
+			return 0;
 		default:
 			return (void*)-1;
 	}

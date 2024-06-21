@@ -42,11 +42,6 @@ void tic_PIT(void){
     scheduler();
 }
 
-void keyb_PIT(int scancode){
-    outb(0x20,0x20);
-    do_scancode(scancode);
-}
-
 void mask_IRQ(uint32_t IRQ_number, bool mask) {
     uint8_t bits_tab;
     bits_tab = (uint8_t) (inb(0x21));

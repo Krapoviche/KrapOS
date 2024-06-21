@@ -74,6 +74,8 @@ void exit(int retval);
 
 int kill(int pid);
 
+void lspci();
+
 /**
  * @brief Waits for a given time in milliseconds
  * @param msecs: milliseconds to wait
