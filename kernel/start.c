@@ -9,7 +9,6 @@
 #include "mem.h"
 #include "start.h"
 #include "kbd.h"
-#include "mouse.h"
 
 void idle(void){
 	while(1){
@@ -30,7 +29,6 @@ void kernel_start(void)
 	init_IT_handlers(49, IT_49_handler);
 	mask_IRQ(0, false);
 	mask_IRQ(1, false);
-	mask_IRQ(12, false);
 	process_table = init_process_table();
     init_keyboard_buffer();
 
