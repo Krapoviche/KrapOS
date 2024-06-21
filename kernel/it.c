@@ -1,9 +1,10 @@
-#include <stdio.h>
+#include "stdio.h"
 #include "cpu.h"
 #include "it.h"
 #include "screen.h"
 #include "segment.h"
 #include "process.h"
+#include "kbd.h"
 
 uint32_t ticks = 0;
 
@@ -12,7 +13,11 @@ void init_IT_handlers(int32_t num_IT, void (*traitant)(void)) {
 
     *tableaddr = (KERNEL_CS << 16) + ((uint32_t) traitant & 0x0000FFFF);
     tableaddr += 1;
-    *tableaddr = ((uint32_t)traitant & 0xFFFF0000) + (CST_IT);
+
+    uint32_t cst_it = USER_CST_IT;
+    if (num_IT == 32) cst_it = CST_IT;
+    
+    *tableaddr = ((uint32_t)traitant & 0xFFFF0000) + (cst_it);
 }
 
 void init_clock(void){

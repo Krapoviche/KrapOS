@@ -3,12 +3,8 @@
 #include "screen.h"
 #include "it.h"
 #include "process.h"
-#include "message.h"
 #include "stdio.h"
-#include "string.h"
-#include "mem.h"
-#include "start.h"
-#include "kbd.h"
+#include "primitive.h"
 
 void idle(void){
 	while(1){
@@ -20,17 +16,16 @@ void idle(void){
 
 void kernel_start(void)
 {
+	// call_debugger(); useless with qemu -s -S
+
 	reset_screen();
 	place_cursor(0, 0);
 
 	init_clock();
 	init_IT_handlers(32, IT_32_handler);
-	init_IT_handlers(33, IT_33_handler);
 	init_IT_handlers(49, IT_49_handler);
 	mask_IRQ(0, false);
-	mask_IRQ(1, false);
 	process_table = init_process_table();
-    init_keyboard_buffer();
 
 	start((void*)idle, 256, INT32_MIN, "p_idle", 0);
 
@@ -38,7 +33,8 @@ void kernel_start(void)
 	process_table->running->state = RUNNING;
 
 	void* user_start = (void*)0x1000000;
-	start(user_start, 4096, 1, "user_start", 0);
+	start(user_start, 2048, 1, "user_start", 0);
+
 
 	idle();
 	return;

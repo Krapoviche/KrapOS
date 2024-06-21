@@ -1,5 +1,6 @@
 #include "ps.h"
 #include "cpu.h"
+#include "it.h"
 
 void ps(){
     char* state[9] = {"RUNNING", "RUNNABLE", "DYING", "LOCKED_MESS", "LOCKED_SEM", "LOCKED_IO", "LOCKED_CHILD", "SLEEPING", "ZOMBIE"};
@@ -20,7 +21,7 @@ void permanent_ps(){
         cli();
 		ps();
         sti();
-		sleep(1);
+		wait_clock(current_clock() + 1*CLOCKFREQ);
 		reset_screen();
 		place_cursor(0, 0);
 	}

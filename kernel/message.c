@@ -3,15 +3,6 @@
 message_table_t message_table;
 
 /**
- * @brief Initialize a message table
- * @return The initialized message table
-*/
-message_table_t* init_message_table() {
-    message_table_t* table = (message_table_t*)mem_alloc(sizeof(message_table_t));
-    return table;
-}
-
-/**
  * @brief creates a message queue
  * @return The initialized message queue
 */
@@ -119,14 +110,4 @@ int reset_message_queue(message_queue_t* queue){
         set_runnable(proc);
     }
     return 0;
-}
-
-/**
- * @brief Destroy the message table
-*/
-void destroy_message_table() {
-    for (uint32_t i = 0; i < MAX_MESSAGES_QUEUES; i++) {
-        pdelete(i);
-    }
-    mem_free(message_table, sizeof(message_table_t));
 }

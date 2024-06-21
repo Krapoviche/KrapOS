@@ -6,19 +6,7 @@
 //XXX Assurer que l'oubli d'une option fait planter la compilation
 //XXX Verifier l'absence de caracteres non ASCII
 
-/*******************************************************************************
- * Gestion de liste d'arguments de taille variable (printf)
- ******************************************************************************/
-typedef void *__gnuc_va_list;
-typedef __gnuc_va_list va_list;
-#define va_arg(AP, TYPE)                                                \
- (AP = (__gnuc_va_list) ((char *) (AP) + __va_rounded_size (TYPE)),     \
-  *((TYPE *) (void *) ((char *) (AP) - __va_rounded_size (TYPE))))
-#define __va_rounded_size(TYPE)  \
-  (((sizeof (TYPE) + sizeof (int) - 1) / sizeof (int)) * sizeof (int))
-#define va_start(AP, LASTARG)                                           \
- (AP = ((__gnuc_va_list) __builtin_next_arg (LASTARG)))
-#define va_end(AP)      ((void)0)
+#include "test.h"
 
 /*******************************************************************************
  * Printf macros
@@ -36,9 +24,6 @@ typedef __gnuc_va_list va_list;
  * Assert : check a condition or fail
  ******************************************************************************/
 #define __STRING(x) #x
-
-#define assert(cond) \
-((void)((cond) ? 0 : assert_failed(__STRING(cond), __FILE__, __LINE__)))
 
 #define DUMMY_VAL 78
 
@@ -137,41 +122,27 @@ unsigned long current_clock(void);
 void wait_clock(unsigned long wakeup);
 int start(int (*ptfunc)(void *), unsigned long ssize, int prio, const char *name, void *arg);
 int waitpid(int pid, int *retval);
-
+int screate(short int count);
+int sdelete(int sem);
+int signal(int sem);
+int sreset(int sem, short int count);
+int swait(int sem);
+int try_wait(int sem);
+int signaln(int sem, short int count);
 /*
  * Pour la soutenance, devrait afficher la liste des processus actifs, des
  * files de messages utilisees et toute autre info utile sur le noyau.
  */
 void sys_info(void);
 
-static int
-strcmp(const char *str1, const char *str2)
-{
-	while (*str1 == *str2) {
-		if (*str1 == 0)
-			return 0;
-		str1++;
-		str2++;
-	}
-	return *str1 - *str2;
-}
-
-static unsigned int
-strlen(const char *s)
-{
-	unsigned long l = 0;
-	while (*s++) l++;
-	return l;
-}
-
-static void
+ void
 cons_puts(const char *s)
 {
 	cons_write(s, strlen(s));
 }
 
 /*******************************************************************************
-static int _printf( char *s, unsigned long n, const char *format, va_list ap )
+ int _printf( char *s, unsigned long n, const char *format, va_list ap )
     La grosse fonction du module. Une version interne du printf, qui imprime
 soit sur la sortie standard, soit dans un buffer.
 Si s == 0 : on imprime sur la sortie standard.
@@ -197,7 +168,7 @@ struct printf_st {
 	unsigned long strl;
 };
 
-static void
+ void
 print(struct printf_st *pf, char c)
 {
 	while (1) {
@@ -231,7 +202,7 @@ print(struct printf_st *pf, char c)
 /****************************************************************************
  * Pour afficher les "%s".
  ***************************************************************************/
-static void
+ void
 print_string(struct printf_st *pf, char *s) {
 	int size = 0;
 	char *ptr = s;
@@ -259,7 +230,7 @@ print_string(struct printf_st *pf, char *s) {
 /*******************************************************************************
  * Pour afficher les "%c".
  ******************************************************************************/
-static void
+ void
 print_char(struct printf_st *pf, char c) {
 	if (!(pf->flags & PRINTF_LEFT_JUSTIFY))
 		while (pf->width-- > 1)
@@ -272,7 +243,7 @@ print_char(struct printf_st *pf, char c) {
 /*******************************************************************************
  * Pour afficher les "%x", "%X".
  ******************************************************************************/
-static void
+ void
 print_hexa(struct printf_st *pf, unsigned long i) {
 	int pos = 0;
 	int n;
@@ -363,7 +334,7 @@ print_hexa(struct printf_st *pf, unsigned long i) {
 /*******************************************************************************
  * Pour afficher les "%d", "%i" et "%u". Le signe doit etre '+' ou '-'.
  ******************************************************************************/
-static void
+ void
 print_dec(struct printf_st *pf, unsigned long i, char sign) {
 	int pos = 0;
 	int n;
@@ -433,7 +404,7 @@ print_dec(struct printf_st *pf, unsigned long i, char sign) {
 /*******************************************************************************
  *   Pour afficher les "%x", "%X".
  ******************************************************************************/
-static void
+ void
 print_oct(struct printf_st *pf, unsigned int i) {
 	int pos = 0;
 	int n;
@@ -500,7 +471,7 @@ print_oct(struct printf_st *pf, unsigned int i) {
 /*******************************************************************************
  * Pour afficher les "%p".
  ******************************************************************************/
-static void
+ void
 print_pointer(struct printf_st *pf, void *p) {
 	if (p == 0) {
 		print_string(pf, "(nil)");
@@ -513,7 +484,7 @@ print_pointer(struct printf_st *pf, void *p) {
 /*******************************************************************************
  * Voici la fonction "principale".
  ******************************************************************************/
-static int
+ int
 __printf(struct printf_st *pf, const char *format, va_list ap) {
 	pf->count = 0;
 	while (*format != 0) {
@@ -692,7 +663,7 @@ __printf(struct printf_st *pf, const char *format, va_list ap) {
 	return pf->count;
 }
 
-static int
+ int
 _printf(char *s, unsigned long n, const char *format, va_list ap)
 {
 	struct printf_st pf;
@@ -725,22 +696,9 @@ _printf(char *s, unsigned long n, const char *format, va_list ap)
 }
 
 /*******************************************************************************
-static int printf( const char *format, ... )
+ int printf( const char *format, ... )
 *******************************************************************************/
-static int
-printf(const char *format, ...)
-{
-	int ret;
-	va_list ap;
-
-	va_start(ap, format);
-	ret = _printf(0, 0, format, ap);
-
-	va_end(ap);
-	return ret;
-}
-
-static int
+ int
 assert_failed(const char *cond, const char *file, int line)
 {
 	printf("%s:%d: assertion '%s' failed.\n", file, line, cond);
@@ -749,7 +707,7 @@ assert_failed(const char *cond, const char *file, int line)
 	while (1) ;
 }
 
-static void
+ void
 cons_gets(char *s, unsigned long length)
 {
 	unsigned long n = 0;
@@ -816,7 +774,7 @@ div64(unsigned long long x, unsigned long long div, unsigned long long *rem)
 /*******************************************************************************
  * Pseudo random number generator
  ******************************************************************************/
-static unsigned long long mul64(unsigned long long x, unsigned long long y)
+ unsigned long long mul64(unsigned long long x, unsigned long long y)
 {
 	unsigned long a, b, c, d, e, f, g, h;
 	unsigned long long res = 0;
@@ -853,13 +811,13 @@ static unsigned long long mul64(unsigned long long x, unsigned long long y)
 typedef unsigned long long uint_fast64_t;
 typedef unsigned long uint_fast32_t;
 
-static const uint_fast64_t _multiplier = 0x5DEECE66DULL;
-static const uint_fast64_t _addend = 0xB;
-static const uint_fast64_t _mask = (1ULL << 48) - 1;
-static uint_fast64_t _seed = 1;
+ const uint_fast64_t _multiplier = 0x5DEECE66DULL;
+ const uint_fast64_t _addend = 0xB;
+ const uint_fast64_t _mask = (1ULL << 48) - 1;
+ uint_fast64_t _seed = 1;
 
 // Assume that 1 <= _bits <= 32
-static uint_fast32_t
+ uint_fast32_t
 randBits(int _bits)
 {
 	uint_fast32_t rbits;
@@ -869,13 +827,13 @@ randBits(int _bits)
 	return rbits >> (32 - _bits);
 }
 
-static void
+ void
 setSeed(uint_fast64_t _s)
 {
 	_seed = _s;
 }
 
-static unsigned long
+ unsigned long
 rand()
 {
 	return randBits(32);
@@ -884,7 +842,7 @@ rand()
 /*******************************************************************************
  * Unmask interrupts for those who are working in kernel mode
  ******************************************************************************/
-static void test_it()
+ void test_it()
 {
 	__asm__ volatile("pushfl; testl $0x200,(%%esp); jnz 0f; sti; nop; cli; 0: addl $4,%%esp\n":::"memory");
 }
@@ -896,7 +854,7 @@ static void test_it()
  * Terminaison normale avec valeur de retour
  * Attente de terminaison (cas fils avant pere et cas pere avant fils)
  ******************************************************************************/
-static int
+ int
 dummy1(void *arg)
 {
 	printf("1");
@@ -904,7 +862,7 @@ dummy1(void *arg)
 	return 3;
 }
 
-static int
+ int
 dummy1_2(void *arg)
 {
 	printf(" 5");
@@ -913,7 +871,7 @@ dummy1_2(void *arg)
 	return 4;
 }
 
-static void
+ void
 test1(void)
 {
 	int pid1;
@@ -943,14 +901,14 @@ test1(void)
  * waitpid() de ce fils termine par kill()
  * waitpid() de fils termine par exit()
  ******************************************************************************/
-static int
+ int
 dummy2(void *args)
 {
 	printf(" X");
 	return (int)args;
 }
 
-static int
+ int
 dummy2_2(void *args)
 {
 	printf(" 5");
@@ -959,7 +917,7 @@ dummy2_2(void *args)
 	return 0;
 }
 
-static void
+ void
 test2(void)
 {
 	int rval;
@@ -994,7 +952,7 @@ test2(void)
  * chprio() et ordre de scheduling
  * kill() d'un processus qui devient moins prioritaire
  ******************************************************************************/
-static int
+ int
 proc_prio4(void *arg)
 {
 	/* arg = priority of this proc. */
@@ -1008,7 +966,7 @@ proc_prio4(void *arg)
 	return 0;
 }
 
-static int
+ int
 proc_prio5(void *arg)
 {
 	/* Arg = priority of this proc. */
@@ -1023,7 +981,7 @@ proc_prio5(void *arg)
 	return 0;
 }
 
-static void
+ void
 test3(void)
 {
 	int pid1;
@@ -1067,10 +1025,10 @@ test3(void)
  * kill() de processus de faible prio
  * kill() de processus deja mort
  ******************************************************************************/
-static const int loop_count0 = 5000;
-static const int loop_count1 = 10000;
+ const int loop_count0 = 5000;
+ const int loop_count1 = 10000;
 
-static int
+ int
 busy_loop1(void *arg)
 {
 	(void) arg;
@@ -1087,7 +1045,7 @@ busy_loop1(void *arg)
 }
 
 /* assume the process to suspend has a priority == 64 */
-static int
+ int
 busy_loop2(void *arg)
 {
 	int i;
@@ -1106,7 +1064,7 @@ busy_loop2(void *arg)
 	return 0;
 }
 
-static void
+ void
 test4(void)
 {
 	int pid1, pid2;
@@ -1141,7 +1099,7 @@ test4(void)
  * Certaines interdictions ne sont peut-etre pas dans la spec. Changez les pour
  * faire passer le test correctement.
  ******************************************************************************/
-static int
+ int
 no_run(void *arg)
 {
 	(void)arg;
@@ -1149,7 +1107,7 @@ no_run(void *arg)
 	return 1;
 }
 
-static int
+ int
 waiter(void *arg)
 {
 	int pid = (int)arg;
@@ -1158,7 +1116,7 @@ waiter(void *arg)
 	return 1;
 }
 
-static void
+ void
 test5(void)
 {
 	int pid1, pid2;
@@ -1211,7 +1169,7 @@ __asm__(
 ".previous\n"
 );
 
-static void
+ void
 test6(void)
 {
 	int pid1, pid2, pid3;
@@ -1246,7 +1204,7 @@ test6(void)
  * periode de scheduling
  ******************************************************************************/
 
-static int
+ int
 proc_timer1(void *arg)
 {
 	unsigned long quartz;
@@ -1266,9 +1224,9 @@ proc_timer1(void *arg)
 	return 0;
 }
 
-static volatile unsigned long timer;
+ volatile unsigned long timer;
 
-static int
+ int
 proc_timer(void *arg)
 {
 	(void)arg;
@@ -1281,7 +1239,7 @@ proc_timer(void *arg)
 	return 0;
 }
 
-static int
+ int
 sleep_pr1(void *args)
 {
 	(void)args;
@@ -1291,7 +1249,7 @@ sleep_pr1(void *args)
 	return 1;
 }
 
-static void
+ void
 test7(void)
 {
 	int pid1, pid2, r;
@@ -1338,7 +1296,7 @@ test7(void)
  * Creation de processus se suicidant en boucle. Test de la vitesse de creation
  * de processus.
  ******************************************************************************/
-static int
+ int
 suicide(void *arg)
 {
 	(void)arg;
@@ -1347,7 +1305,7 @@ suicide(void *arg)
 	return 0;
 }
 
-static int
+ int
 suicide_launcher(void *arg)
 {
 	int pid1;
@@ -1357,7 +1315,7 @@ suicide_launcher(void *arg)
 	return pid1;
 }
 
-static void
+ void
 test8(void)
 {
 	unsigned long long tsc1;
@@ -1394,7 +1352,7 @@ test8(void)
  *
  * Test de la sauvegarde des registres dans les appels systeme et interruptions
  ******************************************************************************/
-static int
+ int
 nothing(void *arg)
 {
 	(void)arg;
@@ -1541,12 +1499,12 @@ __asm__(
 ".previous\n"
 );
 
-static volatile int __it_ok;
+ volatile int __it_ok;
 
 extern void
 __test_valid_regs2(int a1, int a2, int a3, int a4, int a5, int a6);
 
-static int
+ int
 test_regs2(void *arg)
 {
 	(void)arg;
@@ -1555,7 +1513,7 @@ test_regs2(void *arg)
 	return 0;
 }
 
-static void
+ void
 test9(void)
 {
 	int i;
@@ -1577,7 +1535,7 @@ test9(void)
 	printf(" 3.\n");
 }
 
-static void write(int fid, const char *buf, unsigned long len)
+ void write(int fid, const char *buf, unsigned long len)
 {
 	unsigned long i;
 	for (i=0; i<len; i++) {
@@ -1585,7 +1543,7 @@ static void write(int fid, const char *buf, unsigned long len)
 	}
 }
 
-static void read(int fid, char *buf, unsigned long len)
+ void read(int fid, char *buf, unsigned long len)
 {
 	unsigned long i;
 	for (i=0; i<len; i++) {
@@ -1600,7 +1558,7 @@ static void read(int fid, char *buf, unsigned long len)
  *
  * Test d'utilisation d'une file comme espace de stockage temporaire.
  ******************************************************************************/
-static void
+ void
 test10(void)
 {
 	int fid;
@@ -1628,13 +1586,13 @@ struct sem {
 	int fid;
 };
 
-static void
+ void
 xwait(struct sem *s)
 {
 	assert(preceive(s->fid, 0) == 0);
 }
 
-static void
+ void
 xsignal(struct sem *s)
 {
 	int count;
@@ -1644,21 +1602,21 @@ xsignal(struct sem *s)
 	assert(count < 2);
 }
 
-static void
+ void
 xscreate(struct sem *s)
 {
 	assert((s->fid = pcreate(2)) >= 0);
 }
 
-static void
+ void
 xsdelete(struct sem *s)
 {
 	assert(pdelete(s->fid) == 0);
 }
 
-static int in_mutex = 0;
+ int in_mutex = 0;
 
-static int
+ int
 proc_mutex(void *arg)
 {
 	struct sem *sem = arg;
@@ -1692,7 +1650,7 @@ proc_mutex(void *arg)
 	return 0;
 }
 
-static void
+ void
 test11(void)
 {
 	struct sem sem;
@@ -1727,7 +1685,7 @@ test11(void)
  *
  * Tests de rendez-vous sur une file de taille 1.
  ******************************************************************************/
-static int
+ int
 rdv_proc(void *arg)
 {
 	int fid = (int) arg;
@@ -1751,7 +1709,7 @@ rdv_proc(void *arg)
 	return 0;
 }
 
-static void
+ void
 test12(void)
 {
 	int fid;
@@ -1793,7 +1751,7 @@ struct psender {
 	const char *data;
 };
 
-static int
+ int
 psender(void *arg)
 {
 	struct psender *ps = arg;
@@ -1806,7 +1764,7 @@ psender(void *arg)
 	return 0;
 }
 
-static int
+ int
 preceiver(void *arg)
 {
 	struct psender *ps = arg;
@@ -1820,7 +1778,7 @@ preceiver(void *arg)
 	return 0;
 }
 
-static void
+ void
 test13(void)
 {
 	struct psender ps1, ps2, ps3;
@@ -1900,7 +1858,7 @@ test13(void)
  *
  * Tests de preset et pdelete
  ******************************************************************************/
-static int
+ int
 psender1(void *arg)
 {
 	int fid1 = (int)arg;
@@ -1927,7 +1885,7 @@ psender1(void *arg)
 	return 0;
 }
 
-static int
+ int
 psender2(void *arg)
 {
 	int fid1 = (int)arg;
@@ -1954,7 +1912,7 @@ psender2(void *arg)
 	return 0;
 }
 
-static void
+ void
 test14(void)
 {
 	int pid1, pid2;
@@ -1994,7 +1952,7 @@ test14(void)
  *
  * Tuer des processus en attente sur file
  ******************************************************************************/
-static int
+ int
 pmsg1(void *arg)
 {
 	int fid1 = (int)arg;
@@ -2008,7 +1966,7 @@ pmsg1(void *arg)
 	return 1;
 }
 
-static int
+ int
 pmsg2(void *arg)
 {
 	int fid1 = (int)arg;
@@ -2019,7 +1977,7 @@ pmsg2(void *arg)
 	return 1;
 }
 
-static void
+ void
 test15(void)
 {
 	int pid1, pid2, fid1;
@@ -2069,7 +2027,7 @@ struct tst16 {
 	int fid;
 };
 
-static int
+ int
 proc_16_1(void *arg)
 {
 	struct tst16 *p = arg;
@@ -2082,7 +2040,7 @@ proc_16_1(void *arg)
 	return 0;
 }
 
-static int
+ int
 proc_16_2(void *arg)
 {
 	struct tst16 *p = arg;
@@ -2094,7 +2052,7 @@ proc_16_2(void *arg)
 	return 0;
 }
 
-static int
+ int
 proc_16_3(void *arg)
 {
 	struct tst16 *p = arg;
@@ -2106,7 +2064,7 @@ proc_16_3(void *arg)
 	return 0;
 }
 
-static void
+ void
 test16(void)
 {
 	int i, count, fid, pid;
@@ -2158,17 +2116,17 @@ test16(void)
  *
  * On teste des limites de capacite
  ******************************************************************************/
-static int ids[1200];
+ int ids[1200];
 
-static const int heap_len = 15 << 20;
+ const int heap_len = 15 << 20;
 
-static int
+ int
 proc_return(void *arg)
 {
 	return (int)arg;
 }
 
-static void
+ void
 test17(void)
 {
 	int i, n, nx;
@@ -2293,7 +2251,7 @@ test17(void)
  *
  * Amusement : piratage !
  ******************************************************************************/
-static char callhack[] = { 0xcd, 0x32, 0xc3 };
+ char callhack[] = { 0xcd, 0x32, 0xc3 };
 
 __asm__(
 ".text\n"
@@ -2317,21 +2275,19 @@ __asm__(
 extern void
 __hacking(void);
 
-static __inline__ void 
-outb(unsigned char value, unsigned short port)
+void outb(unsigned char value, unsigned short port)
 {
 	__asm__ __volatile__("outb %0, %1" : : "a" (value), "Nd" (port));
 }
 
-static __inline__ unsigned char 
-inb(unsigned short port)
+unsigned char inb(unsigned short port)
 {
 	unsigned char rega;
 	__asm__ __volatile__("inb %1,%0" : "=a" (rega) : "Nd" (port));
 	return rega;
 }
 
-static int
+ int
 getpos(void)
 {
 	int pos;
@@ -2342,12 +2298,12 @@ getpos(void)
 	return pos;
 }
 
-static int firsttime = 1;
+ int firsttime = 1;
 
 void
 __hacking_c(void)
 {
-	static int pos;
+	 int pos = 0;
 	if (firsttime) {
 		firsttime = 0;
 		pos = getpos();
@@ -2365,7 +2321,7 @@ __hacking_c(void)
 	}
 }
 
-static void
+ void
 do_hack(void)
 {
 	firsttime = 1;
@@ -2374,21 +2330,21 @@ do_hack(void)
 	((void (*)(void))callhack)();
 }
 
-static int
+ int
 proc_18_1(void *args)
 {
 	printf("1 ");
 	return (int)args;
 }
 
-static int
+ int
 proc_18_2(void *args)
 {
 	printf("2 ");
 	return (int)args;
 }
 
-static void
+ void
 test18(void)
 {
 	unsigned long a = (unsigned long)__hacking;
@@ -2424,7 +2380,7 @@ test18(void)
  * Quelques processus lisent sur la console et transmettent leur terminaison
  * via une file.
  ******************************************************************************/
-static int
+ int
 cons_reader(void *arg)
 {
 	int fid = (int)arg;
@@ -2435,7 +2391,7 @@ cons_reader(void *arg)
 	return 0;
 }
 
-static void
+ void
 test19(void)
 {
 	int fid = pcreate(10);
@@ -2488,17 +2444,17 @@ test19(void)
  *
  * Le repas des philosophes.
  ******************************************************************************/
-static char f[NR_PHILO]; /* tableau des fourchettes, contient soit 1 soit 0 selon si elle
+ char f[NR_PHILO]; /* tableau des fourchettes, contient soit 1 soit 0 selon si elle
 			    est utilisee ou non */
 
-static char bloque[NR_PHILO]; /* memorise l'etat du philosophe, contient 1 ou 0 selon que le philosophe
+ char bloque[NR_PHILO]; /* memorise l'etat du philosophe, contient 1 ou 0 selon que le philosophe
 				 est en attente d'une fourchette ou non */
 
-static struct sem mutex_philo; /* exclusion mutuelle */
-static struct sem s[NR_PHILO]; /* un semaphore par philosophe */
-static int etat[NR_PHILO];
+ struct sem mutex_philo; /* exclusion mutuelle */
+ struct sem s[NR_PHILO]; /* un semaphore par philosophe */
+ int etat[NR_PHILO];
 
-static void
+ void
 affiche_etat()
 {
 	int i;
@@ -2512,12 +2468,13 @@ affiche_etat()
 		default:
 			c = 4;
 		}
-		assert(c %2 == 0); // utilisation de c pour le compilo
+        int z = c % 2;
+		assert(z == 0); // utilisation de c pour le compilo
 		printf("%c", etat[i]);
 	}
 }
 
-static void
+ void
 waitloop(void)
 {
 	int j;
@@ -2528,7 +2485,7 @@ waitloop(void)
 	}
 }
 
-static void
+ void
 penser(long i)
 {
 	xwait(&mutex_philo); /* DEBUT SC */
@@ -2542,7 +2499,7 @@ penser(long i)
 	xsignal(&mutex_philo); /* Fin SC */
 }
 
-static void
+ void
 manger(long i)
 {
 	xwait(&mutex_philo); /* DEBUT SC */
@@ -2556,14 +2513,14 @@ manger(long i)
 	xsignal(&mutex_philo); /* Fin SC */
 }
 
-static int
+ int
 test(int i)
 {
 	/* les fourchettes du philosophe i sont elles libres ? */
 	return ((!f[i] && (!f[(i + 1) % NR_PHILO])));
 }
 
-static void
+ void
 prendre_fourchettes(int i)
 {
 	/* le philosophe i prend des fourchettes */
@@ -2581,7 +2538,7 @@ prendre_fourchettes(int i)
 	xwait(&s[i]); /* on attend au cas o on ne puisse pas prendre 2 fourchettes */
 }
 
-static void
+ void
 poser_fourchettes(int i)
 {
 
@@ -2604,7 +2561,7 @@ poser_fourchettes(int i)
 	xsignal(&mutex_philo); /* Fin SC */
 }
 
-static int
+ int
 philosophe(void *arg)
 {
 	/* comportement d'un seul philosophe */
@@ -2624,7 +2581,7 @@ philosophe(void *arg)
 	return 0;
 }
 
-static int
+ int
 launch_philo()
 {
 
@@ -2638,7 +2595,7 @@ launch_philo()
 
 }
 
-static void
+ void
 test20(void)
 {
 	int j, pid;
@@ -2663,19 +2620,106 @@ test20(void)
 	}
 }
 
+void swait1(int sid) {
+    swait(sid);
+    printf(" %d", 140-getprio(getpid()));
+}
+void signal1(int sid) {
+    printf(" %d", 129-getprio(getpid()));
+    signal(sid);
+}
+
+void
+test21(void) {
+    assert(getprio(getpid()) == 128);
+    int sid = screate(0);
+    assert(sid >= 0);
+    start((void*)signal1, 256, 127, "signal_1", (void*)sid); // 2
+    printf("1");
+    start((void*)swait1, 256, 137, "swait_1", (void*)sid); // 3
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    start((void*)signal1, 256, 125, "signal_2", (void*)sid); // 4
+    start((void*)swait1, 256, 135, "swait_2", (void*)sid); // 5
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    start((void*)swait1, 256, 131, "swait_3", (void*)sid); // 9
+    start((void*)swait1, 256, 129, "swait_4", (void*)sid); // 11
+    start((void*)swait1, 256, 133, "swait_5", (void*)sid); // 7
+    start((void*)signal1, 256, 121, "signal_3", (void*)sid); // 8
+    start((void*)signal1, 256, 119, "signal_4", (void*)sid); // 10
+    start((void*)signal1, 256, 123, "signal_5", (void*)sid); // 6
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    assert(try_wait(sid) == -3);
+    printf(" 12.");
+}
+
+void swait2(int sid) {
+    int sw = swait(sid);
+    if (140 - getprio(getpid()) <= 3) {
+        assert(sw == -4);
+    } else if (140 - getprio(getpid()) <= 6) {
+        assert(sw == -3);
+    } else {
+        assert(sw == 0);
+    }
+    printf(" %d", 140-getprio(getpid()));
+}
+void signal2(int sid) {
+    printf(" %d", 129-getprio(getpid()));
+    signal(sid);
+}
+
+void
+test22(void) {
+    assert(getprio(getpid()) == 128);
+    int sid = screate(0);
+    assert(sid >= 0);
+    start((void*)swait2, 256, 137, "swait_1", (void*)sid);
+    start((void*)swait2, 256, 138, "swait_2", (void*)sid);
+    printf("1");
+    sreset(sid, 0);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    start((void*)swait2, 256, 134, "swait_3", (void*)sid);
+    start((void*)swait2, 256, 135, "swait_4", (void*)sid);
+    printf(" 4");
+    sdelete(sid);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    assert(swait(sid) == -1);
+    sid = screate(2);
+    start((void*)swait2, 256, 133, "swait_5", (void*)sid);
+    start((void*)swait2, 256, 132, "swait_6", (void*)sid);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    start((void*)swait2, 256, 129, "swait_7", (void*)sid);
+    printf(" 9");
+    start((void*)signal2, 256, 119, "signal_1", (void*)sid);
+    waitpid(-1, 0);
+    waitpid(-1, 0);
+    assert(try_wait(sid) == -3);
+    printf(" 12.");
+}
+
 /*******************************************************************************
  * Fin des tests
  ******************************************************************************/
 
-static void auto_test(void);
+ void auto_test(void);
 
-static void
+ void
 quit(void)
 {
 	exit(0);
 }
 
-static struct {
+ struct {
 	const char *name;
 	void (*f) (void);
 } commands[] = {
@@ -2699,6 +2743,8 @@ static struct {
 	{"18", test18},
 	{"19", test19},
 	{"20", test20},
+	{"21", test21},
+	{"22", test22},
 	{"si", sys_info},
 	{"a", auto_test},
 	{"auto", auto_test},
@@ -2708,7 +2754,7 @@ static struct {
 	{0, 0},
 };
 
-static void
+ void
 auto_test(void)
 {
 	int i = 0;
@@ -2723,7 +2769,7 @@ int
 test_run(int n)
 {
 	assert(getprio(getpid()) == 128);
-	if ((n < 1) || (n > 20)) {
+	if ((n < 1) || (n > 22)) {
 		printf("%d: unknown test\n", n);
 	} else {
 		commands[n - 1].f();
@@ -2734,7 +2780,7 @@ test_run(int n)
 int
 test_proc(void *arg)
 {
-	char buffer[20];
+	char buffer[22];
 
 	(void)arg;
 	assert(getprio(getpid()) == 128);
@@ -2751,8 +2797,8 @@ test_proc(void *arg)
 
 	while (1) {
 		int i = 0;
-		printf("Test (1-20, auto) : ");
-		cons_gets(buffer, 20);
+		printf("Test (1-22, auto) : ");
+		cons_gets(buffer, 22);
 		while (commands[i].name && strcmp(commands[i].name, buffer)) i++;
 		if (!commands[i].name) {
 			printf("%s: unknown test\n", buffer);

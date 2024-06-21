@@ -4,8 +4,11 @@ all:
 	$(MAKE) -C user/ all VERBOSE=$(VERBOSE)
 	$(MAKE) -C kernel/ kernel.bin VERBOSE=$(VERBOSE)
 
-test:
+test-kernel:
 	./kernel/run_tests.sh
+
+test-user:
+	./user/run_tests.sh
 
 docker:
 	docker run -i --platform linux/amd64 --entrypoint 'make' --workdir /psys-base --rm -v $(PWD):/psys-base gcc:11.4.0
@@ -16,7 +19,7 @@ debug.macos: run-kernel-debug run-debugger.macos
 run: run-kernel
 
 run-kernel :
-	qemu-system-i386 -machine q35 -m 256 -kernel kernel/kernel.bin
+	qemu-system-i386 -machine q35 -m 256 -kernel kernel/kernel.bin -device e1000,bus=pcie.0 -device virtio-gpu-pci,bus=pcie.0 -smbios type=0,uefi=on
 
 run-kernel-test :
 	qemu-system-i386 -machine q35 -m 256 -kernel kernel/kernel.bin -debugcon stdio > qemu-output.txt 2> /dev/null &

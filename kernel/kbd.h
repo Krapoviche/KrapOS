@@ -22,6 +22,17 @@
 #ifndef __KBD_H__
 #define __KBD_H__
 
+#include "stdint.h"
+
+#define KBD_BUF_SIZE 512
+
+typedef struct kbd_buf {
+    char buf[KBD_BUF_SIZE];
+    uint32_t write_head;
+    uint32_t read_head;
+    uint32_t count;
+} kbd_buf;
+
 /* Call this function for each scancode received to translate them to
 characters. */
 void do_scancode(int scancode);
@@ -33,5 +44,17 @@ void keyboard_data(char *str);
 /* You may implement this function to keep keyboard LEDs in sync with the
 state of the keyboard driver (do_scancode). */
 void kbd_leds(unsigned char leds);
+
+void init_keyboard_buffer(void);
+
+void cons_echo(int on);
+
+int cons_read(char *string, unsigned long length);
+
+void cons_write(const char *str, long size);
+
+extern kbd_buf keyboard_buffer;
+extern int writing;
+extern int echo;
 
 #endif
