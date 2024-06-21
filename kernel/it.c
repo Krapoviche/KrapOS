@@ -1,10 +1,4 @@
-#include "stdio.h"
-#include "cpu.h"
 #include "it.h"
-#include "screen.h"
-#include "segment.h"
-#include "process.h"
-#include "kbd.h"
 
 uint32_t ticks = 0;
 

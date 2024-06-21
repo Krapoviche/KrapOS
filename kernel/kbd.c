@@ -1,34 +1,48 @@
 #include "kbd.h"
-#include "stdio.h"
-#include "cpu.h"
-#include "mem.h"
-#include "string.h"
-#include "process.h"
-#include "queue.h"
 
 kbd_buf keyboard_buffer;
 int writing;
 int echo = 1;
 
-void init_keyboard_buffer(void){
+void init_keyboard_buffer(void) {
     keyboard_buffer.count = 0;
     keyboard_buffer.write_head = 0;
     keyboard_buffer.read_head = 0;
     writing = 0;
 }
 
-void kbd_int(void){
+void kbd_int(void) {
     // Read the scancode from the keyboard port
     unsigned char scancode = inb(0x60);
 
     // Acknowledge the interruption
     outb(0x20,0x20);
 
-    // Translate scancode to a character
-    do_scancode((char) scancode);
+    if(scancode == 224){
+        scancode = inb(0x60);
+        outb(0x20,0x20);
+        if (scancode == 72) {
+            cmd_hist_up();
+        }
+        if (scancode == 73) {
+            scroll_up();
+        }
+        if (scancode == 80) {
+            cmd_hist_down();
+        }
+        if (scancode == 81) {
+            scroll_down();
+        }
+    }
+    else if(scancode == 73 || scancode == 81 || scancode == 72 || scancode == 80) {
+        return;
+    } else {
+        // Translate scancode to a character
+        do_scancode((char) scancode);
+    }
 }
 
-void keyboard_data(char *str){
+void keyboard_data(char *str) {
     int i = 0;
     char c = str[i];
 
@@ -71,7 +85,7 @@ void keyboard_data(char *str){
     }
 }
 
-void kbd_leds(unsigned char leds){
+void kbd_leds(unsigned char leds) {
     // Write the led status to the keyboard port
     outb(0xED, 0x60);
     for (int i = 0; i < 100000; i++);

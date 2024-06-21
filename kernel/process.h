@@ -4,6 +4,7 @@
 #include "stdint.h"
 #include "queue.h"
 #include "primitive.h"
+#include "screen.h"
 
 #define NBPROC 1024
 #define REGISTER_SAVE_COUNT 5
@@ -15,6 +16,9 @@
 #define SS_USER 0x4B
 #define CS_USER 0x43
 #define EFLAGS 0x202
+#define SCREEN_BUFFER_LEN 128
+#define MAX_COMMAND_LENGTH 150
+#define MAX_COMMANDS_HIST 4
 
 extern void ctx_sw(uint32_t* old, uint32_t* new);
 
@@ -22,6 +26,29 @@ typedef enum process_state{RUNNING, RUNNABLE, DYING, LOCKED_MESS, LOCKED_SEM, LO
 
 // queue_link & priority are fields related to Queue management
 // See shared/queue.h
+
+typedef struct screen_buffer {
+    uint16_t* buf[SCREEN_BUFFER_LEN];
+    uint16_t visible_screen[NB_LINE*NB_COL];
+    uint32_t cursor_pos[2];
+    int newer_lines;
+    int older_lines;
+    int total_lines;
+} screen_buf_t;
+
+typedef struct cmd_hist {
+    char buf[MAX_COMMANDS_HIST][MAX_COMMAND_LENGTH];
+    uint32_t max;
+    uint32_t index;
+    uint32_t count;
+    uint32_t count_read;
+} cmd_hist_t;
+
+typedef struct shell_props {
+    screen_buf_t* screen_buffer;
+    cmd_hist_t* cmd_hist;
+} shell_props_t;
+
 typedef struct process_t
 {
     int32_t pid;
@@ -41,8 +68,8 @@ typedef struct process_t
     int32_t retval;
     int priority;
     int msg;
+    shell_props_t* shell_props;
 } process_t;
-
 
 typedef struct process_table_t
 {
@@ -53,6 +80,7 @@ typedef struct process_table_t
     link* zombie_queue;
     link* io_queue;
     process_t* running;
+    int32_t running_shell;
     uint32_t nbproc;
 } process_table_t;
 
@@ -63,6 +91,9 @@ void set_runnable(process_t* proc);
 int32_t alloc_free_pid(process_t* proc);
 int32_t cancel_start(uint32_t err_code, process_t* created_proc);
 int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const char *name, uint32_t argc, ...);
+int register_shell();
+void save_screen();
+void load_screen();
 char* getname(void);
 void scheduler();
 extern void do_iret();
@@ -70,6 +101,9 @@ int end_process_life(int32_t pid, int retval);
 void seek_for_awaking_processes();
 void clear_dead_processes();
 process_t* get_process(int pid);
+
+int cmd_hist_up();
+int cmd_hist_down();
 
 extern process_table_t* process_table;
 extern uint32_t idle_registers[REGISTER_SAVE_COUNT];

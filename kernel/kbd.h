@@ -23,6 +23,13 @@
 #define __KBD_H__
 
 #include "stdint.h"
+#include "stdio.h"
+#include "cpu.h"
+#include "mem.h"
+#include "string.h"
+#include "process.h"
+#include "queue.h"
+#include "screen.h"
 
 #define KBD_BUF_SIZE 512
 

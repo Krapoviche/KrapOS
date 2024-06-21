@@ -35,6 +35,7 @@ process_table_t* init_process_table(){
     memcpy(process_table->io_queue,&head_io_queue, sizeof(link));
 
     // Default values
+    process_table->running_shell = -1;
     process_table->nbproc = 0;
 
     return process_table;
@@ -170,12 +171,39 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
     return new_proc->pid;
 }
 
+int register_shell() {
+    process_table->running->shell_props = mem_alloc(sizeof(shell_props_t));
+    shell_props_t* shell_props = process_table->running->shell_props;
+    shell_props->cmd_hist = mem_alloc(sizeof(cmd_hist_t));
+    shell_props->screen_buffer = mem_alloc(sizeof(screen_buf_t));
+    if (process_table->running_shell >= 0) {
+        save_screen();
+    }
+    process_table->running_shell = process_table->running->pid;
+    load_screen();
+    place_cursor(0,0);
+    return 0;
+}
+
 /**
  * Get the name of the currently running process
  * @return the name of the currently running process
 */
 char* getname(void){
     return process_table->running->name;
+}
+
+void load_screen() {
+    memmove(ptr_mem(0,0), get_process(process_table->running_shell)->shell_props->screen_buffer->visible_screen, sizeof(uint16_t)*NB_COL*NB_LINE);
+    place_cursor(get_process(process_table->running_shell)->shell_props->screen_buffer->cursor_pos[0], get_process(process_table->running_shell)->shell_props->screen_buffer->cursor_pos[1]);
+}
+
+void save_screen() {
+    get_process(process_table->running_shell)->shell_props->screen_buffer->cursor_pos[0] = CURSOR_LINE;
+    get_process(process_table->running_shell)->shell_props->screen_buffer->cursor_pos[1] = CURSOR_COLUMN;
+    for (int i = 0; i < NB_LINE - 1 ; i++){
+        memmove(get_process(process_table->running_shell)->shell_props->screen_buffer->visible_screen, ptr_mem(0,0), sizeof(uint16_t)*NB_COL*NB_LINE);
+    }
 }
 
 /**
@@ -211,6 +239,11 @@ void scheduler(){
         }
         elected_proc->state = RUNNING;
 
+        if (process_table->running_shell == old_proc->pid) {
+            save_screen();
+            process_table->running_shell = -1;
+        }
+
         // Update running process
         process_table->running = elected_proc;
 
@@ -222,6 +255,20 @@ void scheduler(){
 
         // Context switch between the two processes
         ctx_sw(old_proc->register_save_zone, elected_proc->register_save_zone);
+        // Update the "running" shell if the process is a shell
+        if (process_table->running->shell_props != NULL) {
+            process_table->running_shell = process_table->running->pid;
+        }
+        if (process_table->running->shell_props == NULL && process_table->running_shell < 0 && !queue_empty(process_table->io_queue)) {
+            process_table->running_shell = (queue_top(process_table->io_queue, process_t, queue_link))->pid;
+        }
+        // Update the screen if a shell is "running" (RUNNING or LOCKEC_IO all shells are)
+        if (process_table->running_shell >= 0) {
+            load_screen();
+        } else {
+            reset_screen();
+            place_cursor(0,0);
+        }
         return;
     }
     return;
@@ -234,9 +281,12 @@ int end_process_life(int32_t pid, int retval){
         return -1;
     }
 
+    if (process_table->running_shell == pid) {
+        process_table->running_shell = -1;
+    }
+
     child->retval = retval;
     int32_t ppid = child->ppid;
-
 
     // Treat parent case (stop waiting if waiting for this process)
     if (ppid >= 0 && (parent = get_process(ppid))) {
@@ -248,12 +298,12 @@ int end_process_life(int32_t pid, int retval){
             parent->awaken_by = child->pid; // tell parent who woke it up
             set_runnable(parent); // Wake up parent
         }
-        if(child->state == RUNNABLE || child->state == SLEEPING || child->state == LOCKED_MESS || child->state == LOCKED_SEM){
+        if(child->state == RUNNABLE || child->state == SLEEPING || child->state == LOCKED_MESS || child->state == LOCKED_SEM || child->state == LOCKED_IO){
             queue_del(child, queue_link);
         }
         child->state = ZOMBIE;
     } else {
-        if(child->state == RUNNABLE || child->state == SLEEPING || child->state == LOCKED_MESS || child->state == LOCKED_SEM){
+        if(child->state == RUNNABLE || child->state == SLEEPING || child->state == LOCKED_MESS || child->state == LOCKED_SEM || child->state == LOCKED_IO){
             queue_del(child, queue_link);
             queue_add(child, process_table->dead_queue, process_t, queue_link, priority);
         }
@@ -293,6 +343,9 @@ void clear_dead_processes(){
         process = queue_out(process_table->dead_queue,process_t,queue_link);
         process_table->table[process->pid] = NULL;
         mem_free(process->children, sizeof(link));
+        mem_free(process->shell_props->cmd_hist, sizeof(cmd_hist_t));
+        mem_free(process->shell_props->screen_buffer, sizeof(screen_buf_t));
+        mem_free(process->shell_props, sizeof(shell_props_t));
         user_stack_free(process->user_stack, sizeof(uint32_t)*process->stack_size);
         mem_free(process, sizeof(process_t));
         process_table->nbproc -= 1;
@@ -307,4 +360,65 @@ process_t* get_process(int pid){
             return process;
     }
     return NULL;
+}
+
+int cmd_hist_up() {
+    cmd_hist_t* hist = (queue_top(process_table->io_queue, process_t, queue_link))->shell_props->cmd_hist;
+    if (hist->count <= 0) {
+        return -1;
+    }
+    // Check if their are still commands in the history that we did not read already
+    if(hist->count_read < hist->count){
+        // If the is not the first time going up in the cmd history, we need to erase the current command
+        if (hist->count_read > 0) { // May be negative
+            char c;
+            char del[2] = {127, '\0'};
+            uint8_t i = 0;
+            uint32_t prev_index = (hist->index + 1) % MAX_COMMANDS_HIST;
+            while((c = hist->buf[prev_index][i]) != '\0' && i < MAX_COMMAND_LENGTH) {
+                keyboard_data(del);
+                i++;
+            }
+        } else {
+            for (int i = 0; i < MAX_COMMAND_LENGTH; i++) {
+                char del[2] = {127, '\0'};
+                keyboard_data(del);
+            }
+        }
+        keyboard_data(hist->buf[hist->index]);
+        if (hist->index == 0) {
+            hist->index = MAX_COMMANDS_HIST - 1;
+        } else {
+            hist->index = hist->index - 1;
+        }
+        hist->count_read++;
+    }
+    return 0;
+}
+
+int cmd_hist_down() {
+    cmd_hist_t* hist = (queue_top(process_table->io_queue, process_t, queue_link))->shell_props->cmd_hist;
+    if (hist->count <= 0) {
+        return -1;
+    }
+    // Check if we did not already displayed the most recent command in the history
+    // If buffer is full, that translates into the index pointing to the same call as the max
+    if(hist->count_read > 0){
+        hist->index = (hist->index + 1) % MAX_COMMANDS_HIST;
+        char c;
+        char del[2] = {127, '\0'};
+        uint8_t i = 0;
+        uint32_t prev_index = hist->index;
+        while((c = hist->buf[prev_index][i]) != '\0' && i < MAX_COMMAND_LENGTH) {
+            // printf("%c", c);
+            // del[0] = del[0];
+            keyboard_data(del);
+            i++;
+        }
+        hist->count_read--;
+        if (hist->count_read > 0) {
+            keyboard_data(hist->buf[(hist->index+1)%MAX_COMMANDS_HIST]);
+        }
+    }
+    return 0;
 }

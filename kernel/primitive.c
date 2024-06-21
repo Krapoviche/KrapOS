@@ -65,8 +65,9 @@ int cons_read(char *string, unsigned long length){
     }
 
     // Lock until 13 char
-    process_table->running->state = LOCKED_IO;
-    queue_add(process_table->running, process_table->io_queue, process_t, queue_link, priority);
+    process_t* running = process_table->running;
+    running->state = LOCKED_IO;
+    queue_add(running, process_table->io_queue, process_t, queue_link, priority);
     scheduler();
 
     for(read = 0 ; read < length ; read++){
@@ -83,6 +84,26 @@ int cons_read(char *string, unsigned long length){
 
     // Copy to caller buffer
     memcpy(string, buffer, read);
+    // Add cmd to history
+    if (running->shell_props != NULL) {
+        cmd_hist_t* cmd_hist = running->shell_props->cmd_hist;
+        if (read > 0) {
+            // Clear the buffer cell we are about to write to
+            for (uint16_t i = 0; i<MAX_COMMAND_LENGTH; i++) {
+                cmd_hist->buf[cmd_hist->max][i] = '\0';
+            }
+            strcpy(cmd_hist->buf[cmd_hist->max], string);
+            cmd_hist->index = cmd_hist->max;
+            cmd_hist->count_read = 0;
+            cmd_hist->max = (cmd_hist->max + 1) % MAX_COMMANDS_HIST;
+            if (cmd_hist->count < MAX_COMMANDS_HIST) {
+                cmd_hist->count++;
+            }
+        } else {
+            cmd_hist->index = cmd_hist->max;
+            cmd_hist->count_read = 0;
+        }
+    }
 
     // End of writing phase
     writing--;

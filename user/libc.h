@@ -10,6 +10,11 @@
 */
 int chprio(int pid, int prio);
 
+/**
+ * @brief Clears console
+ * @return 0 if successful, negative value if failed
+*/
+int clear();
 
 /**
  * @brief Get clock quartz and ticks settings
@@ -137,6 +142,12 @@ void ps(void);
  * @return 0 if successful, negative value if failed (queue is NULL or was reset)
 */
 int psend(int fid, int message);
+
+/**
+ * @brief Registers process as shell process
+ * @return 0 if successful, negative value if failed
+*/
+int register_shell();
 
 /**
  * @brief Atomically gets the semaphore count value

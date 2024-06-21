@@ -1,6 +1,13 @@
 #ifndef __IT_H__
 #define __IT_H__
 
+#include "stdio.h"
+#include "cpu.h"
+#include "screen.h"
+#include "segment.h"
+#include "process.h"
+#include "kbd.h"
+
 #define IDT 0x1000
 #define CST_IT 0x8E00
 #define USER_CST_IT 0xEE00

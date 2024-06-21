@@ -79,6 +79,12 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5) {
 		case SYS_DUMP_STACK:
 			dump_stack(process_table->running);
 			return 0;
+		case SYS_CLEAR:
+			reset_screen();
+			place_cursor(0,0);
+			return 0;
+		case SYS_REGSHELL:
+			return (void*)register_shell();
 		case SYS_LSPCI:
 			lspci();
 			return 0;
