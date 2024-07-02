@@ -213,9 +213,6 @@ void scheduler(){
     // Handle dead processes
     clear_dead_processes();
 
-    // Handle sleeping processes
-    seek_for_awaking_processes();
-
     process_t* elected_proc;
     // Store the currently running one as old
     process_t* old_proc = process_table->running;

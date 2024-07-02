@@ -33,6 +33,9 @@ void tic_PIT(void){
     outb(0x20,0x20);
     ticks++;
 
+    // Handle sleeping processes
+    seek_for_awaking_processes();
+
     scheduler();
 }
 
