@@ -38,7 +38,7 @@ int chprio(int pid, int newprio){
                 queue_del(process, queue_link);
                 queue_add(process, waiting_queue, process_t, queue_link,priority);
                 // No scheduler call here, the process will be waken up by the next sender
-            } else if (process->state == RUNNING){
+            } else if (process->state == RUNNING) {
                 scheduler();
             }
         }

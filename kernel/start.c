@@ -12,9 +12,7 @@
 
 void idle(void){
 	while(1){
-		sti();
 		hlt();
-		cli();
 	}
 }
 
