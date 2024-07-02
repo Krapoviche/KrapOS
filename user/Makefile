@@ -68,3 +68,7 @@ $(OUTPUT):
 
 clean:
 	rm -rf $(OUTPUT) user.bin user.debug
+clean.msw:
+	rd /s /q out
+	del user.bin
+	del user.debug

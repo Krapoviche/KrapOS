@@ -145,4 +145,8 @@ $(OUTPUT):
 .PHONY: clean
 clean:
 	rm -rf $(OUTPUT) kernel.bin cd.iso
+clean.msw:	
+	rd /s /q out
+	del kernel.bin
+	del cd.iso
 
