@@ -44,7 +44,7 @@ void cleanup_line() {
 
 void scroll_up() {
     process_t* shell;
-    if ((shell = find_target_shell())) {
+    if (process_table->running_shell >= 0 && (shell = get_process(process_table->running_shell))) {
         screen_buf_t* screen_buffer = shell->shell_props->screen_buffer;
         if (screen_buffer->older_lines > 0 && screen_buffer->newer_lines < SCREEN_BUFFER_LEN) {
             uint16_t* source = ptr_mem(0,0);
@@ -73,7 +73,7 @@ void scroll_up() {
 
 void scroll_down() {
     process_t* shell;
-    if ((shell = find_target_shell())) {
+    if (process_table->running_shell >= 0 && (shell = get_process(process_table->running_shell))) {
         screen_buf_t* screen_buffer = shell->shell_props->screen_buffer;
         if (screen_buffer->newer_lines > 0 && screen_buffer->older_lines < SCREEN_BUFFER_LEN) {
 
