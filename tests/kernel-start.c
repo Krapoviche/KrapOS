@@ -7,11 +7,11 @@
 #include "primitive.h"
 
 void idle(void){
+	sti();
 	while(1){
-		sti();
 		hlt();
-		cli();
 	}
+	cli();
 }
 
 void kernel_start(void)

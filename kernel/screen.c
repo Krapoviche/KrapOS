@@ -7,12 +7,24 @@ uint16_t *ptr_mem(uint32_t lig, uint32_t col){
     return (uint16_t *)(0xB8000 + 2 * (lig * NB_COL + col)); // Calcul de l'addresse en mémoire. On caste l'entier en uint16
 }
 
+process_t* find_target_shell() {
+    if (process_table->running_shell < 0) return NULL;
+    if (echoing) {
+        if (queue_empty(process_table->io_queue)) return NULL;
+        return queue_top(process_table->io_queue, process_t, queue_link);
+    } else {
+        return get_process(process_table->running->shell_pid);
+    }
+}
+
 void write_char(uint32_t lig, uint32_t col, char c, uint8_t fc, uint8_t bg) {
-    uint16_t *ptr = ptr_mem(lig,col);
-    *ptr = c | (bg << 4) | (fc << 8);
+    uint16_t tmp = c | (bg << 4) | (fc << 8);
+    *ptr_mem(lig,col) = tmp;
     process_t* shell;
-    if (process_table->running_shell >= 0 && (shell = get_process(process_table->running_shell))) {
-        get_process(process_table->running_shell)->shell_props->screen_buffer->visible_screen[col + lig*NB_COL] = *ptr;
+    if (echoing) outb('1', 0xE9);
+    else outb('0', 0xE9);
+    if ((shell = find_target_shell())) {
+        shell->shell_props->screen_buffer->visible_screen[col + lig*NB_COL] = tmp;
     }
 }
 
@@ -31,8 +43,9 @@ void cleanup_line() {
 }
 
 void scroll_up() {
-    if (process_table->running_shell >= 0) {
-        screen_buf_t* screen_buffer = get_process(process_table->running_shell)->shell_props->screen_buffer;
+    process_t* shell;
+    if ((shell = find_target_shell())) {
+        screen_buf_t* screen_buffer = shell->shell_props->screen_buffer;
         if (screen_buffer->older_lines > 0 && screen_buffer->newer_lines < SCREEN_BUFFER_LEN) {
             uint16_t* source = ptr_mem(0,0);
             uint16_t* dest = ptr_mem(1,0);
@@ -59,8 +72,9 @@ void scroll_up() {
 }
 
 void scroll_down() {
-    if (process_table->running_shell >= 0) {
-        screen_buf_t* screen_buffer = get_process(process_table->running_shell)->shell_props->screen_buffer;
+    process_t* shell;
+    if ((shell = find_target_shell())) {
+        screen_buf_t* screen_buffer = shell->shell_props->screen_buffer;
         if (screen_buffer->newer_lines > 0 && screen_buffer->older_lines < SCREEN_BUFFER_LEN) {
 
             uint16_t* source = ptr_mem(1,0);
@@ -88,9 +102,9 @@ void scroll_down() {
 }
 
 void new_line() {
-    if (process_table->running_shell >= 0) {
-        save_screen();
-        screen_buf_t* screen_buffer = get_process(process_table->running_shell)->shell_props->screen_buffer;
+    process_t* shell;
+    if ((shell = find_target_shell())) {
+        screen_buf_t* screen_buffer = shell->shell_props->screen_buffer;
 
         uint16_t* source = ptr_mem(1,0);
         uint16_t* dest = ptr_mem(0,0);
@@ -136,8 +150,9 @@ void place_cursor(uint32_t lig, uint32_t col) {
 }
 
 void treat_char(char c) {
-    if (process_table->running_shell >= 0) {
-        screen_buf_t* screen_buffer = get_process(process_table->running_shell)->shell_props->screen_buffer;
+    process_t* shell;
+    if ((shell = find_target_shell())) {
+        screen_buf_t* screen_buffer = shell->shell_props->screen_buffer;
         while (screen_buffer->newer_lines > 0) {
             scroll_down();
         }
@@ -201,6 +216,12 @@ void treat_char(char c) {
                 }
                 break;
             
+        }
+        
+        if ((shell = find_target_shell())) {
+            screen_buf_t* screen_buf = shell->shell_props->screen_buffer;
+            screen_buf->cursor_pos[0] = CURSOR_LINE;
+            screen_buf->cursor_pos[1] = CURSOR_COLUMN;
         }
 
         place_cursor(CURSOR_LINE,CURSOR_COLUMN);

@@ -8,6 +8,7 @@
 #include "stdint.h"
 #include "string.h"
 #include "cpu.h"
+#include "kbd.h"
 #include "stdio.h"
 #include "it.h"
 

@@ -18,7 +18,7 @@
 #define EFLAGS 0x202
 #define SCREEN_BUFFER_LEN 128
 #define MAX_COMMAND_LENGTH 150
-#define MAX_COMMANDS_HIST 4
+#define MAX_COMMANDS_HIST 64
 
 extern void ctx_sw(uint32_t* old, uint32_t* new);
 
@@ -69,6 +69,7 @@ typedef struct process_t
     int priority;
     int msg;
     shell_props_t* shell_props;
+    int32_t shell_pid;
 } process_t;
 
 typedef struct process_table_t

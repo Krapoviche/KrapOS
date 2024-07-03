@@ -98,7 +98,6 @@ int shell(bool sp) {
                     printf("Running test %ld\n", numtest);
                     int pid = start(tests[numtest - 1], 8096, 128, "test", 0);
                     waitpid(pid, 0);
-                    printf("\n");
                 } else {
                     printf("Wrong test number : %s\n", chunk);
                 }

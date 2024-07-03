@@ -164,6 +164,12 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
     set_runnable(new_proc);
     va_end(args);
 
+    if (process_table->running && process_table->running->shell_pid >= 0) {
+        new_proc->shell_pid = process_table->running->shell_pid;
+    } else {
+        new_proc->shell_pid = -1;
+    }
+
     if(new_proc->pid > 1){
         scheduler();
     }
@@ -172,15 +178,25 @@ int32_t start_multi_args(int (*pt_func)(void*), uint32_t ssize, int prio, const 
 }
 
 int register_shell() {
-    process_table->running->shell_props = mem_alloc(sizeof(shell_props_t));
-    shell_props_t* shell_props = process_table->running->shell_props;
+    process_t* running = process_table->running;
+    // Alloc shell properties
+    running->shell_props = mem_alloc(sizeof(shell_props_t));
+    shell_props_t* shell_props = running->shell_props;
     shell_props->cmd_hist = mem_alloc(sizeof(cmd_hist_t));
     shell_props->screen_buffer = mem_alloc(sizeof(screen_buf_t));
-    if (process_table->running_shell >= 0) {
-        save_screen();
+    // Init cursor position
+    shell_props->screen_buffer->cursor_pos[0] = 0;
+    shell_props->screen_buffer->cursor_pos[1] = 0;
+    
+    int32_t shell_pid = process_table->running_shell;
+    // A shell is its own shell to send output to
+    running->shell_pid = running->pid;
+    if (shell_pid >= 0) {
+        // save_screen();
     }
-    process_table->running_shell = process_table->running->pid;
-    load_screen();
+    // The shell associated to this process is now himself
+    process_table->running_shell = running->pid;
+    reset_screen();
     place_cursor(0,0);
     return 0;
 }
@@ -194,15 +210,17 @@ char* getname(void){
 }
 
 void load_screen() {
-    memmove(ptr_mem(0,0), get_process(process_table->running_shell)->shell_props->screen_buffer->visible_screen, sizeof(uint16_t)*NB_COL*NB_LINE);
-    place_cursor(get_process(process_table->running_shell)->shell_props->screen_buffer->cursor_pos[0], get_process(process_table->running_shell)->shell_props->screen_buffer->cursor_pos[1]);
+    screen_buf_t* sb = get_process(process_table->running_shell)->shell_props->screen_buffer;
+    memmove(ptr_mem(0,0), sb->visible_screen, sizeof(uint16_t)*NB_COL*NB_LINE);
+    place_cursor(sb->cursor_pos[0], sb->cursor_pos[1]);
 }
 
 void save_screen() {
-    get_process(process_table->running_shell)->shell_props->screen_buffer->cursor_pos[0] = CURSOR_LINE;
-    get_process(process_table->running_shell)->shell_props->screen_buffer->cursor_pos[1] = CURSOR_COLUMN;
+    screen_buf_t* sb = get_process(process_table->running_shell)->shell_props->screen_buffer;
+    sb->cursor_pos[0] = CURSOR_LINE;
+    sb->cursor_pos[1] = CURSOR_COLUMN;
     for (int i = 0; i < NB_LINE - 1 ; i++){
-        memmove(get_process(process_table->running_shell)->shell_props->screen_buffer->visible_screen, ptr_mem(0,0), sizeof(uint16_t)*NB_COL*NB_LINE);
+        memmove(sb->visible_screen, ptr_mem(0,0), sizeof(uint16_t)*NB_COL*NB_LINE);
     }
 }
 
@@ -236,9 +254,10 @@ void scheduler(){
         }
         elected_proc->state = RUNNING;
 
-        if (process_table->running_shell == old_proc->pid) {
-            save_screen();
-            process_table->running_shell = -1;
+        // If elected proc is a shell
+        if (elected_proc->shell_props != NULL) {
+            process_table->running_shell = elected_proc->pid;
+            load_screen();
         }
 
         // Update running process
@@ -249,24 +268,8 @@ void scheduler(){
         // when interrupting (and switching from userspace to kernelspace)
         // the stack is properly switched the same way.
         tss.esp0 = (uint32_t)&elected_proc->kernel_stack[KERNEL_STACK_SIZE - 1];
-
         // Context switch between the two processes
         ctx_sw(old_proc->register_save_zone, elected_proc->register_save_zone);
-        // Update the "running" shell if the process is a shell
-        if (process_table->running->shell_props != NULL) {
-            process_table->running_shell = process_table->running->pid;
-        }
-        if (process_table->running->shell_props == NULL && process_table->running_shell < 0 && !queue_empty(process_table->io_queue)) {
-            process_table->running_shell = (queue_top(process_table->io_queue, process_t, queue_link))->pid;
-        }
-        // Update the screen if a shell is "running" (RUNNING or LOCKEC_IO all shells are)
-        if (process_table->running_shell >= 0) {
-            load_screen();
-        } else {
-            reset_screen();
-            place_cursor(0,0);
-        }
-        return;
     }
     return;
 }
@@ -340,9 +343,11 @@ void clear_dead_processes(){
         process = queue_out(process_table->dead_queue,process_t,queue_link);
         process_table->table[process->pid] = NULL;
         mem_free(process->children, sizeof(link));
-        mem_free(process->shell_props->cmd_hist, sizeof(cmd_hist_t));
-        mem_free(process->shell_props->screen_buffer, sizeof(screen_buf_t));
-        mem_free(process->shell_props, sizeof(shell_props_t));
+        if (process->shell_props != NULL) {
+            mem_free(process->shell_props->cmd_hist, sizeof(cmd_hist_t));
+            mem_free(process->shell_props->screen_buffer, sizeof(screen_buf_t));
+            mem_free(process->shell_props, sizeof(shell_props_t));
+        }
         user_stack_free(process->user_stack, sizeof(uint32_t)*process->stack_size);
         mem_free(process, sizeof(process_t));
         process_table->nbproc -= 1;
