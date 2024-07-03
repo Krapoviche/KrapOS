@@ -59,7 +59,9 @@ void keyboard_data(char *str) {
                     keyboard_buffer.count--;
                     if(echo){
                         c = '\b';
+                        echoing = true;
                         cons_write(&c, 1);
+                        echoing = false;
                     }
                 }
             } else {
