@@ -10,6 +10,11 @@
 */
 int chprio(int pid, int prio);
 
+/**
+ * @brief Clears console
+ * @return 0 if successful, negative value if failed
+*/
+int clear();
 
 /**
  * @brief Get clock quartz and ticks settings
@@ -55,6 +60,12 @@ uint32_t current_clock(void);
  * @brief print stack of current process
 */
 void dump_stack(void);
+
+/**
+ * @brief Get the process name
+ * @param name: pointer to the string where the name should be stored
+*/
+void getname(char *name);
 
 /**
  * @brief Get the process id of the currently running process
@@ -131,6 +142,12 @@ void ps(void);
  * @return 0 if successful, negative value if failed (queue is NULL or was reset)
 */
 int psend(int fid, int message);
+
+/**
+ * @brief Registers process as shell process
+ * @return 0 if successful, negative value if failed
+*/
+int register_shell();
 
 /**
  * @brief Atomically gets the semaphore count value

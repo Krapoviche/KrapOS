@@ -1,5 +1,6 @@
 #define SYS_MILLISLEEP 35
 #define SYS_GETPID 39
+#define SYS_GETNAME 40 // sys_sendfile in linux
 #define SYS_START 56 // sys_clone in linux
 #define SYS_EXIT 60
 #define SYS_KILL 62
@@ -29,6 +30,8 @@
 #define SYS_CONSECHO 303
 #define SYS_PS 304
 #define SYS_DUMP_STACK 305
+#define SYS_CLEAR 306
+#define SYS_REGSHELL 307
 #define SYS_LSPCI 308
 
 
@@ -137,9 +140,12 @@ SYSCALL0(getppid, SYS_GETPPID)
 SYSCALL0(current_clock, SYS_CLOCK_GETTIME)
 SYSCALL0(ps, SYS_PS)
 SYSCALL0(dump_stack, SYS_DUMP_STACK)
+SYSCALL0(clear, SYS_CLEAR)
+SYSCALL0(register_shell, SYS_REGSHELL)
 SYSCALL0(lspci, SYS_LSPCI)
 
 SYSCALL1(millisleep, SYS_MILLISLEEP)
+SYSCALL1(getname, SYS_GETNAME)
 SYSCALL1(getprio, SYS_GETPRIORITY)
 SYSCALL1(exit, SYS_EXIT)
 SYSCALL1(kill, SYS_KILL)

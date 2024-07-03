@@ -38,63 +38,13 @@ int chprio(int pid, int newprio){
                 queue_del(process, queue_link);
                 queue_add(process, waiting_queue, process_t, queue_link,priority);
                 // No scheduler call here, the process will be waken up by the next sender
-            } else if (process->state == RUNNING){
+            } else if (process->state == RUNNING) {
                 scheduler();
             }
         }
         return prio;
     }
     return -1;
-}
-
-void cons_echo(int on) {
-    echo = on;
-}
-
-int cons_read(char *string, unsigned long length){
-    if(length <= 0) return 0;
-    writing++;
-    long unsigned int read = 0;
-    char buffer[length];
-    
-    // If precedent call left a cons_read 
-    if(keyboard_buffer.buf[keyboard_buffer.read_head] == 13){
-        keyboard_buffer.count--;
-        keyboard_buffer.read_head = (keyboard_buffer.read_head + 1) % KBD_BUF_SIZE;
-        return 0;
-    }
-
-    // Lock until 13 char
-    process_table->running->state = LOCKED_IO;
-    queue_add(process_table->running, process_table->io_queue, process_t, queue_link, priority);
-    scheduler();
-
-    for(read = 0 ; read < length ; read++){
-        if(keyboard_buffer.buf[keyboard_buffer.read_head] == 13){
-            keyboard_buffer.read_head = (keyboard_buffer.read_head + 1) % KBD_BUF_SIZE;
-            keyboard_buffer.count--;
-            break;
-        }
-        // Copy keyboard buffer to final buffer, atomically
-        buffer[read] = keyboard_buffer.buf[keyboard_buffer.read_head];
-        keyboard_buffer.count--;
-        keyboard_buffer.read_head = (keyboard_buffer.read_head + 1) % KBD_BUF_SIZE;
-    }
-
-    // Copy to caller buffer
-    memcpy(string, buffer, read);
-
-    // End of writing phase
-    writing--;
-
-    return read;
-}
-
-void cons_write(const char *str, long size) {
-    if (size < 0){
-        return;
-    }
-    console_putbytes(str, size);
 }
 
 int getpid(void){

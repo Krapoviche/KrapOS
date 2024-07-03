@@ -23,6 +23,13 @@
 #define __KBD_H__
 
 #include "stdint.h"
+#include "stdio.h"
+#include "cpu.h"
+#include "mem.h"
+#include "string.h"
+#include "process.h"
+#include "queue.h"
+#include "screen.h"
 
 #define KBD_BUF_SIZE 512
 
@@ -32,6 +39,8 @@ typedef struct kbd_buf {
     uint32_t read_head;
     uint32_t count;
 } kbd_buf;
+
+void init_keyboard_buffer(void);
 
 /* Call this function for each scancode received to translate them to
 characters. */
@@ -45,16 +54,30 @@ void keyboard_data(char *str);
 state of the keyboard driver (do_scancode). */
 void kbd_leds(unsigned char leds);
 
-void init_keyboard_buffer(void);
-
+/**
+ * @brief Changes the echo mode of the console
+ * @param on: 0 to disable echo, != 0 to enable
+*/
 void cons_echo(int on);
 
+/**
+ * @brief Reads from the terminal
+ * @param string: address to write string to
+ * @param length: length of the string
+ * @return the number of characters read
+ */
 int cons_read(char *string, unsigned long length);
 
+/**
+ * @brief Sends to the terminal the string of length size at addresse str
+ * @param str: string to write
+ * @param size: length of the string
+*/
 void cons_write(const char *str, long size);
 
 extern kbd_buf keyboard_buffer;
 extern int writing;
 extern int echo;
+extern int echoing;
 
 #endif

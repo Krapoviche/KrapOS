@@ -1,10 +1,4 @@
-#include "stdio.h"
-#include "cpu.h"
 #include "it.h"
-#include "screen.h"
-#include "segment.h"
-#include "process.h"
-#include "kbd.h"
 
 uint32_t ticks = 0;
 
@@ -38,6 +32,9 @@ void clock_settings(unsigned long *quartz, unsigned long *ticks) {
 void tic_PIT(void){
     outb(0x20,0x20);
     ticks++;
+
+    // Handle sleeping processes
+    seek_for_awaking_processes();
 
     scheduler();
 }

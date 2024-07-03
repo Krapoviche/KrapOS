@@ -18,9 +18,7 @@ void ps(){
 
 void permanent_ps(){
 	while(1){
-        cli();
 		ps();
-        sti();
 		wait_clock(current_clock() + 1*CLOCKFREQ);
 		reset_screen();
 		place_cursor(0, 0);

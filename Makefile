@@ -4,17 +4,23 @@ all:
 	$(MAKE) -C user/ all VERBOSE=$(VERBOSE)
 	$(MAKE) -C kernel/ kernel.bin VERBOSE=$(VERBOSE)
 
+msw: docker.msw run
+macos: docker.macos run
+
 test-kernel:
 	./kernel/run_tests.sh
 
 test-user:
 	./user/run_tests.sh
 
-docker:
-	docker run -i --platform linux/amd64 --entrypoint 'make' --workdir /psys-base --rm -v $(PWD):/psys-base gcc:11.4.0
+docker.msw:
+	docker run -i --platform linux/amd64 --entrypoint 'make' --workdir /KrapOS --rm -v C:\_Lejus\KrapOS:/KrapOS gcc:11.4.0
+docker.macos:
+	docker run -i --platform linux/amd64 --entrypoint 'make' --workdir /KrapOS --rm -v $(PWD):/KrapOS gcc:11.4.0
 
 debug: run-kernel-debug run-debugger
 debug.macos: run-kernel-debug run-debugger.macos
+debug.msw: run-kernel-debug.msw run-debugger.msw
 
 run: run-kernel
 
@@ -28,12 +34,21 @@ run-kernel-debug:
 	killall qemu-system-i386 || true
 	qemu-system-i386 -machine q35 -m 256 -kernel kernel/kernel.bin -s -S -debugcon stdio > qemu-output.txt &
 
+run-kernel-debug.msw:
+	taskkill /F /IM qemu-system-i386.exe /T > nul 2>&1
+	qemu-system-i386 -machine q35 -m 256 -kernel kernel/kernel.bin -s -S -debugcon stdio > qemu-output.txt
+
 run-debugger:
 	/usr/bin/gdb kernel/kernel.bin -ex 'target remote localhost:1234'
 
 run-debugger.macos:
 	lldb kernel/kernel.bin -o 'gdb-remote localhost:1234'
+run-debugger.msw:
+	gdb kernel/kernel.bin -ex 'target remote localhost:1234'
 
+clean.msw:
+	$(MAKE) clean.msw -C kernel/
+	$(MAKE) clean.msw -C user/
 clean:
 	$(MAKE) clean -C kernel/
 	$(MAKE) clean -C user/

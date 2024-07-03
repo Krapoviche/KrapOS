@@ -11,15 +11,16 @@
 #include "kbd.h"
 
 void idle(void){
+	sti();
 	while(1){
-		sti();
 		hlt();
-		cli();
 	}
+	cli();
 }
 
 void kernel_start(void)
 {
+	process_table = init_process_table();
 	reset_screen();
 	place_cursor(0, 0);
 
@@ -29,7 +30,6 @@ void kernel_start(void)
 	init_IT_handlers(49, IT_49_handler);
 	mask_IRQ(0, false);
 	mask_IRQ(1, false);
-	process_table = init_process_table();
     init_keyboard_buffer();
 
 	start((void*)idle, 256, INT32_MIN, "p_idle", 0);

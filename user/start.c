@@ -4,7 +4,6 @@
 
 void user_start(void)
 {
-    start((void*)shell, 4096, 32, "shell_1", (void*)true);
-    while(1);
-
+    start((void*)shell, 8192, 32, "shell", (void*)true);
+    exit(0);
 }

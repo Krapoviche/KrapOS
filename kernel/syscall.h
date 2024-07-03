@@ -15,6 +15,7 @@ void* test_it49(int sn, int arg1, int arg2, int arg3, int arg4, int arg5);
 typedef enum syscall{
     SYS_MILLISLEEP = 35,
     SYS_GETPID = 39,
+    SYS_GETNAME = 40,
     SYS_START = 56,
     SYS_EXIT = 60,
     SYS_KILL = 62,
@@ -43,6 +44,8 @@ typedef enum syscall{
     SYS_CONSECHO = 303,
     SYS_PS = 304,
     SYS_DUMP_STACK = 305,
+    SYS_CLEAR = 306,
+    SYS_REGSHELL = 307,
     SYS_LSPCI = 308
 } syscall;
 
