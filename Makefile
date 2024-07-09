@@ -2,7 +2,7 @@
 
 all:
 	$(MAKE) -C user/ all VERBOSE=$(VERBOSE)
-	$(MAKE) -C kernel/ kernel.bin VERBOSE=$(VERBOSE)
+	$(MAKE) -C kernel/ cd.iso VERBOSE=$(VERBOSE)
 
 test-kernel:
 	./kernel/run_tests.sh
@@ -19,7 +19,7 @@ debug.macos: run-kernel-debug run-debugger.macos
 run: run-kernel
 
 run-kernel :
-	qemu-system-i386 -machine q35 -m 256 -kernel kernel/kernel.bin -device e1000,bus=pcie.0 -device virtio-gpu-pci,bus=pcie.0 -smbios type=0,uefi=on
+	qemu-system-i386 -machine q35 -m 256 -kernel kernel/kernel.bin -device virtio-net-pci,bus=pcie.0 -device virtio-gpu-pci,bus=pcie.0 -smbios type=0,uefi=on
 
 run-kernel-test :
 	qemu-system-i386 -machine q35 -m 256 -kernel kernel/kernel.bin -debugcon stdio > qemu-output.txt 2> /dev/null &
@@ -30,6 +30,9 @@ run-kernel-debug:
 
 run-debugger:
 	/usr/bin/gdb kernel/kernel.bin -ex 'target remote localhost:1234'
+
+run-bochs:
+	bochs -q -f bochs/macos.bxrc
 
 run-debugger.macos:
 	lldb kernel/kernel.bin -o 'gdb-remote localhost:1234'

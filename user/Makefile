@@ -5,12 +5,12 @@ FILES=$(wildcard *.S *.c) printf.c sprintf.c doprnt.c panic.c string.c strtol.c
 DIRS=. ../shared
 
 # Directory and output object files
-OUTPUT := out
-OBJS   := $(addprefix $(OUTPUT)/, $(patsubst %.S, %.o, $(patsubst %.c, %.o, $(FILES))))
+OUTPUT	:= out
+OBJS	:= $(addprefix $(OUTPUT)/, $(patsubst %.S, %.o, $(patsubst %.c, %.o, $(FILES))))
 
-CC=gcc -m32
-AS=gcc -m32
-LD=ld -melf_i386
+CC=/Users/em/Documents/ENSIMAG/AA2/P3/Systemes/osdev/opt/cross/bin/i686-elf-gcc
+AS=/Users/em/Documents/ENSIMAG/AA2/P3/Systemes/osdev/opt/cross/bin/i686-elf-gcc
+LD=/Users/em/Documents/ENSIMAG/AA2/P3/Systemes/osdev/opt/cross/bin/i686-elf-ld -melf_i386
 
 KFLAGS=-Wall -Wextra -g -pipe -std=gnu17 -nostdinc -fno-stack-protector
 #KFLAGS=-Wall -O2 -fomit-frame-pointer -pipe -std=c99 -nostdinc
@@ -58,7 +58,7 @@ user.debug: user.lds $(OBJS)
 	$(LD) -e entry -oformat=binary -Tuser.lds $(OBJS) -o $@
 
 user.bin: user.debug
-	objcopy -O binary $< $@
+	/Users/em/Documents/ENSIMAG/AA2/P3/Systemes/osdev/opt/cross/bin/i686-elf-objcopy -O binary $< $@
 
 # Create build directory for targets but don't depends on its creation date
 $(OBJS): | $(OUTPUT)

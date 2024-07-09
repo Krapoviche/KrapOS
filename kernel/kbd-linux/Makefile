@@ -52,7 +52,7 @@ uskm:
 	cp -f defkeymap.c keymap.c
 
 keymap2.o: keymap.o
-	objcopy `nm -g -f posix $^ | awk '{printf " --redefine-sym "$$1"=keyboard_"$$1}'` $^ $@
+	/Users/em/Documents/ENSIMAG/AA2/P3/Systemes/osdev/opt/cross/bin/i686-elf-objcopy `nm -g -f posix $^ | awk '{printf " --redefine-sym "$$1"=keyboard_"$$1}'` $^ $@
 
 kbd_linux.o: $(OBJS) keymap2.o
 	$(LD) -r $^ -o $@

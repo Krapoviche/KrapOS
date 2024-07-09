@@ -5,12 +5,12 @@
 # Copyright (C) 2014,2019 - Grégory Mounie <Gregory.Mounie@imag.fr>
 
 ### Tools ###
-CC := gcc
-AS := gcc
-LD := ld
-AR := ar
-DEP := gcc
-OBJCOPY := objcopy
+CC := /Users/em/Documents/ENSIMAG/AA2/P3/Systemes/osdev/opt/cross/bin/i686-elf-gcc
+AS := /Users/em/Documents/ENSIMAG/AA2/P3/Systemes/osdev/opt/cross/bin/i686-elf-gcc
+LD := /Users/em/Documents/ENSIMAG/AA2/P3/Systemes/osdev/opt/cross/bin/i686-elf-ld
+AR := /Users/em/Documents/ENSIMAG/AA2/P3/Systemes/osdev/opt/cross/bin/i686-elf-ar
+DEP := /Users/em/Documents/ENSIMAG/AA2/P3/Systemes/osdev/opt/cross/bin/i686-elf-gcc
+OBJCOPY := /Users/em/Documents/ENSIMAG/AA2/P3/Systemes/osdev/opt/cross/bin/i686-elf-objcopy
 MKDIR := mkdir
 CP := cp
 GEN_SECTIONS := build/generate-link-sections.sh
@@ -32,20 +32,20 @@ include build/quiet.mk
 endif
 
 ### Tools flags ###
-DEFS   := -D__KERNEL__
-CFLAGS := -m32 \
-		  -Wall -Wextra -Werror -std=gnu17\
-		  -g \
-		  -pipe \
-		  -nostdinc \
-		  -nostdlib \
-		  -fno-stack-protector \
-		  -fno-pie -no-pie \
-		  -march=pentium \
-		  $(DEFS)
+DEFS	:= -D__KERNEL__
+CFLAGS	:= -m32 \
+			-Wall -Wextra -Werror -std=gnu17\
+			-g \
+			-pipe \
+			-nostdinc \
+			-nostdlib \
+			-fno-stack-protector \
+			-fno-pie -no-pie \
+			-march=pentium \
+			$(DEFS)
 ASFLAGS := -m32 -g\
-		   -DASSEMBLER \
-		   $(DEFS)
+			-DASSEMBLER \
+			$(DEFS)
 ARFLAGS := rcs
 LDFLAGS := -g -melf_i386 -no-pie
 
@@ -55,15 +55,15 @@ include build/utils.mk
 ### Compilation sources ###
 # Use DIRS variable to add source sub-directories
 DIRS := . boot
-SRC  :=	\
+SRC	:=	\
 	$(call all-asm-files-under, $(DIRS)) \
 	$(call all-c-files-under , $(DIRS))
 INCLUDES := $(addprefix -I, $(DIRS) ../shared)
 
 ### Output files ###
-OUTPUT      := out
-DEPS        := $(addprefix $(OUTPUT)/, $(call generate-deps, $(SRC)))
-OBJS        := $(addprefix $(OUTPUT)/, $(call objetize, $(SRC))) \
+OUTPUT		:= out
+DEPS		:= $(addprefix $(OUTPUT)/, $(call generate-deps, $(SRC)))
+OBJS		:= $(addprefix $(OUTPUT)/, $(call objetize, $(SRC))) \
 	$(OUTPUT)/task_dump_screen.o
 OUTPUT_DIRS := $(addprefix $(OUTPUT)/, $(DIRS))
 
@@ -80,7 +80,7 @@ include build/kbd-linux.mk
 .PHONY: $(OUTPUT)/userdata.o
 $(OUTPUT)/userdata.o: ../user/user.bin
 	$(MAKE) -C ../user
-	objcopy $(OUTPUT)/empty.o --add-section=.user=$^ --set-section-flags=.user=contents,alloc,load,data $@
+	$(OBJCOPY) $(OUTPUT)/empty.o --add-section=.user=$^ --set-section-flags=.user=contents,alloc,load,data $@
 
 
 ### Generate the kernel, ready to run ###
@@ -92,22 +92,14 @@ cd.iso: kernel.bin
 	mkdir -p iso/boot/grub
 	cp kernel.bin iso/boot
 	printf 'set timeout=0\nset default=0\nmenuentry "kernel.bin" {\n multiboot /boot/kernel.bin\n boot\n}' > iso/boot/grub/grub.cfg
-	grub-mkrescue -o cd.iso iso
+	/Users/em/Documents/ENSIMAG/AA2/P3/Systemes/osdev/opt/cross/bin/grub-mkrescue -o cd.iso iso
 	rm -r iso/
-
-### lancement de bochs: il faut faire [6] Begin Smulation puis 'cont'
-### pour commencer la simulation avec gdbstub activé comme qemu
-.PHONY: bochs
-bochs: cd.iso
-	bochs -q 'memory: guest=256,host=256' 'boot: cdrom' 'ata0-master: type=cdrom, path="cd.iso", status=inserted' 'gdbstub: enabled=1, port=1234, text_base=0, data_base=0, bss_base=0'
 
 ### Generic rules ###
 $(OUTPUT)/%.d: %.c | $(OUTPUT)
-	@echo -n "$(@D)/" > $@
 	$(DEP) $(INCLUDES) -MM $< >> $@
 
 $(OUTPUT)/%.d: %.S | $(OUTPUT)
-	@echo -n "$(@D)/" > $@
 	$(DEP) $(INCLUDES) -MM $< >> $@
 
 $(OUTPUT)/%.o: %.c | $(OUTPUT)

@@ -42,8 +42,7 @@ typedef enum syscall{
     SYS_CONSWRITE = 302,
     SYS_CONSECHO = 303,
     SYS_PS = 304,
-    SYS_DUMP_STACK = 305,
-    SYS_LSPCI = 308
+    SYS_DUMP_STACK = 305
 } syscall;
 
 #endif

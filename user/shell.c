@@ -14,7 +14,7 @@ int shell(bool sp){
     // int command_size;
     char * chunk;
     cons_echo(1);
-    
+
     while(1){
         if(sp) prompt();
 
@@ -32,11 +32,9 @@ int shell(bool sp){
             ps();
         } else if (strcmp(chunk, "dump_stack") == 0){
             dump_stack();
-        } else if (strcmp(chunk, "lspci") == 0){
-            lspci();
         } else if (strcmp(chunk, "test") == 0){
             char ** end = NULL;
-            chunk = strtok(NULL," "); 
+            chunk = strtok(NULL," ");
             if (chunk == NULL){
                 for(int i = 1 ; i <= 22 ; i++){
                     printf("Running test %d\n", i);

@@ -14,7 +14,7 @@ int chprio(int pid, int prio);
 /**
  * @brief Get clock quartz and ticks settings
  * @param quartz: pointer where to write the quartz setting
- * @param ticks: pointer where to write the ticks setting 
+ * @param ticks: pointer where to write the ticks setting
 */
 void clock_settings(unsigned long *quartz, unsigned long *ticks);
 
@@ -73,8 +73,6 @@ int getprio(int pid);
 void exit(int retval);
 
 int kill(int pid);
-
-void lspci();
 
 /**
  * @brief Waits for a given time in milliseconds

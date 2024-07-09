@@ -38,7 +38,6 @@ void clock_settings(unsigned long *quartz, unsigned long *ticks) {
 void tic_PIT(void){
     outb(0x20,0x20);
     ticks++;
-
     scheduler();
 }
 
