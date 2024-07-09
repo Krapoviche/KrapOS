@@ -5,12 +5,26 @@
 # Copyright (C) 2014,2019 - Grégory Mounie <Gregory.Mounie@imag.fr>
 
 ### Tools ###
-CC := gcc
-AS := gcc
-LD := ld
-AR := ar
-DEP := gcc
-OBJCOPY := objcopy
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	CC := gcc
+	AS := gcc
+	LD := ld
+	AR := ar
+	DEP := gcc
+	OBJCOPY := objcopy
+	ECHO := echo
+endif
+ifeq ($(UNAME_S),Darwin)
+	CC := i686-elf-gcc
+	AS := i686-elf-gcc
+	LD := i686-elf-ld
+	AR := i686-elf-ar
+	DEP := i686-elf-gcc
+	OBJCOPY := i686-elf-objcopy
+	ECHO := gecho
+endif
+
 MKDIR := mkdir
 CP := cp
 GEN_SECTIONS := build/generate-link-sections.sh
@@ -80,7 +94,7 @@ include build/kbd-linux.mk
 .PHONY: $(OUTPUT)/userdata.o
 $(OUTPUT)/userdata.o: ../user/user.bin
 	$(MAKE) -C ../user
-	objcopy $(OUTPUT)/empty.o --add-section=.user=$^ --set-section-flags=.user=contents,alloc,load,data $@
+	$(OBJCOPY) $(OUTPUT)/empty.o --add-section=.user=$^ --set-section-flags=.user=contents,alloc,load,data $@
 
 
 ### Generate the kernel, ready to run ###
@@ -103,11 +117,11 @@ bochs: cd.iso
 
 ### Generic rules ###
 $(OUTPUT)/%.d: %.c | $(OUTPUT)
-	@echo -n "$(@D)/" > $@
+	@$(ECHO) -n "$(@D)/" > $@
 	$(DEP) $(INCLUDES) -MM $< >> $@
 
 $(OUTPUT)/%.d: %.S | $(OUTPUT)
-	@echo -n "$(@D)/" > $@
+	@$(ECHO) -n "$(@D)/" > $@
 	$(DEP) $(INCLUDES) -MM $< >> $@
 
 $(OUTPUT)/%.o: %.c | $(OUTPUT)
@@ -145,7 +159,7 @@ $(OUTPUT):
 .PHONY: clean
 clean:
 	rm -rf $(OUTPUT) kernel.bin cd.iso
-clean.msw:	
+clean.msw:
 	rd /s /q out
 	del kernel.bin
 	del cd.iso

@@ -1,9 +1,21 @@
 # Copyright (C) 2002 by Simon Nieuviarts
 FILES=keyboard.c scancode.c
 OBJS=$(notdir $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(FILES))))
-CC=gcc -m32
-AS=gcc -m32
-LD=ld -melf_i386
+
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	CC := gcc -m32
+	AS := gcc -m32
+	LD := ld -melf_i386
+	OBJCOPY := objcopy
+endif
+ifeq ($(UNAME_S),Darwin)
+	CC := i686-elf-gcc -m32
+	AS := i686-elf-gcc -m32
+	LD := i686-elf-ld -melf_i386
+	OBJCOPY := i686-elf-objcopy
+endif
+
 DIRS=.
 
 KFLAGS=-Wall -Wextra -Werror -O2 -fomit-frame-pointer -pipe -nostdinc

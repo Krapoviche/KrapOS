@@ -15,6 +15,13 @@
 #  SHARED_LIB_TARGET: the target to build the library which is the path to the
 #  library file.
 
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	ECHO := echo
+endif
+ifeq ($(UNAME_S),Darwin)
+	ECHO := gecho
+endif
 
 ### Check pre-requisites ###
 ifndef OUTPUT
@@ -55,11 +62,11 @@ ifneq "$(MAKECMDGOALS)" "clean"
 endif
 
 $(SHARED_LIB_OUT)/%.d: %.c | $(SHARED_LIB_OUT)
-	@echo -n "$(@D)/" > $@
+	@$(ECHO) -n "$(@D)/" > $@
 	$(DEP) -MM $< $(SHARED_LIB_INC) >> $@
 
 $(SHARED_LIB_OUT)/%.d: %.S | $(SHARED_LIB_OUT)
-	@echo -n "$(@D)/" > $@
+	@$(ECHO) -n "$(@D)/" > $@
 	$(DEP) -MM $< $(SHARED_LIB_INC) >> $@
 
 

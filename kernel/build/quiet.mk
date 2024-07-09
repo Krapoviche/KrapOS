@@ -5,7 +5,7 @@
 
 # Use temporary variables to store the tools
 QCC := $(CC)
-QAS := $(AS) 
+QAS := $(AS)
 QLD := $(LD)
 QAR := $(AR)
 QCP := $(CP)
@@ -15,15 +15,23 @@ QOBJCOPY := $(OBJCOPY)
 QGENSECTIONS := $(GEN_SECTIONS)
 QGENTABLE := $(GEN_TABLE)
 
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+	ECHO := echo
+endif
+ifeq ($(UNAME_S),Darwin)
+	ECHO := gecho
+endif
+
 # Define a quiet version of each tool
-CC = @echo -e "    CC [K]\t $@"; $(QCC)
-AS = @echo -e "    AS [K]\t $@"; $(QAS)
-LD = @echo -e "    LD [K]\t $@"; $(QLD)
-AR = @echo -e "    AR [K]\t $@"; $(QAR)
-DEP = @echo -e "    DEP [K]\t $@"; $(QDEP)
-CP = @echo -e "    CP\t\t $< -> $@"; $(QCP)
-MKDIR = @echo -e "    MKDIR\t $@"; $(QMKDIR)
-OBJCOPY =  @echo -e "    OBJCOPY\t $@"; $(QOBJCOPY)
-GEN_SECTIONS = @echo -e "    GEN-SECTIONS $@"; $(QGENSECTIONS)
-GEN_TABLE = @echo -e "    GEN-TABLE\t $@"; $(QGENTABLE)
+CC = @$(ECHO) -e "    CC [K]\t $@"; $(QCC)
+AS = @$(ECHO) -e "    AS [K]\t $@"; $(QAS)
+LD = @$(ECHO) -e "    LD [K]\t $@"; $(QLD)
+AR = @$(ECHO) -e "    AR [K]\t $@"; $(QAR)
+DEP = @$(ECHO) -e "    DEP [K]\t $@"; $(QDEP)
+CP = @$(ECHO) -e "    CP\t\t $< -> $@"; $(QCP)
+MKDIR = @$(ECHO) -e "    MKDIR\t $@"; $(QMKDIR)
+OBJCOPY =  @$(ECHO) -e "    OBJCOPY\t $@"; $(QOBJCOPY)
+GEN_SECTIONS = @$(ECHO) -e "    GEN-SECTIONS $@"; $(QGENSECTIONS)
+GEN_TABLE = @$(ECHO) -e "    GEN-TABLE\t $@"; $(QGENTABLE)
 

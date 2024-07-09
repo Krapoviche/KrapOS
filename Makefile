@@ -1,10 +1,13 @@
 .PHONY: clean all
 
 all:
+ifeq ($(OS),Windows_NT)
+	docker run -i --platform linux/amd64 --entrypoint 'make' --workdir /KrapOS --rm -v C:\_Lejus\KrapOS:/KrapOS gcc:11.4.0
+else
 	$(MAKE) -C user/ all VERBOSE=$(VERBOSE)
 	$(MAKE) -C kernel/ kernel.bin VERBOSE=$(VERBOSE)
+endif
 
-msw: docker.msw run
 macos: docker.macos run
 
 test-kernel:
@@ -12,11 +15,6 @@ test-kernel:
 
 test-user:
 	./user/run_tests.sh
-
-docker.msw:
-	docker run -i --platform linux/amd64 --entrypoint 'make' --workdir /KrapOS --rm -v C:\_Lejus\KrapOS:/KrapOS gcc:11.4.0
-docker.macos:
-	docker run -i --platform linux/amd64 --entrypoint 'make' --workdir /KrapOS --rm -v $(PWD):/KrapOS gcc:11.4.0
 
 debug: run-kernel-debug run-debugger
 debug.macos: run-kernel-debug run-debugger.macos
