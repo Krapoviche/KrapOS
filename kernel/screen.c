@@ -196,10 +196,10 @@ void treat_char(char c) {
                 CURSOR_COLUMN = 0;
                 break;
 
-            case '\r' : 
+            case '\r' :
                 CURSOR_COLUMN = 0;
                 break;
-                
+
             default :
                 write_char(CURSOR_LINE,CURSOR_COLUMN,c,15,0);
                 if(CURSOR_COLUMN == NB_COL){
@@ -215,9 +215,9 @@ void treat_char(char c) {
                     }
                 }
                 break;
-            
+
         }
-        
+
         if ((shell = find_target_shell())) {
             screen_buf_t* screen_buf = shell->shell_props->screen_buffer;
             screen_buf->cursor_pos[0] = CURSOR_LINE;
@@ -230,7 +230,7 @@ void treat_char(char c) {
 
 void display_time(void) {
     uint32_t processor_time = current_clock();
-    char formatted_time[9];
+    char formatted_time[24];
     uint32_t secs = processor_time/CLOCKFREQ;
     sprintf(formatted_time,"%02d:%02d:%02d", secs/3600, secs/60, secs%60);
     for (int i = 0; i<8; i++) {
